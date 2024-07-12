@@ -1,0 +1,3549 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String?      @default("draft") @db.VarChar(100)
+  applicationId String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  email         String?      @unique @db.VarChar(100)
+  firstName     String?      @db.VarChar(50)
+  lastName      String?      @db.VarChar(50)
+  address       String?      @db.VarChar(150)
+  avatar        String?      @db.VarChar(100)
+  password      String?      @db.VarChar(550)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  profiles      Profile[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("accounts")
+}
+
+model Achievement {
+  id          String     @id @db.Uuid
+  name        String     @db.VarChar(100)
+  key         String?    @db.VarChar(100)
+  description String?
+  meta        Json
+  status      String     @default("draft") @db.VarChar(100)
+  metaverseId String?    @db.Uuid
+  ownerId     String?    @db.Uuid
+  createdById String?    @db.Uuid
+  editedById  String?    @db.Uuid
+  deletedById String?    @db.Uuid
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?  @db.Timestamptz(6)
+  deletedAt   DateTime?  @db.Timestamptz(6)
+  metaverse   Metaverse? @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  createdBy   Profile?   @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?   @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?   @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?   @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("achievements")
+}
+
+model Application {
+  id            String         @id @db.Uuid
+  name          String?        @db.VarChar(100)
+  key           String?        @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String?        @default("draft") @db.VarChar(100)
+  createdAt     DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?      @db.Timestamptz(6)
+  deletedAt     DateTime?      @db.Timestamptz(6)
+  accounts      Account[]
+  assets        Asset[]
+  badges        Badge[]
+  battlepasses  BattlePass[]
+  bounties      Bounty[]
+  collections   Collection[]
+  communities   Community[]
+  discussions   Discussion[]
+  events        Event[]
+  exchanges     Exchange[]
+  files         File[]
+  ideas         Idea[]
+  leaderboards  Leaderboard[]
+  assetLicenses AssetLicense[]
+  logs          Log[]
+  marketPairs   MarketPair[]
+  markets       Market[]
+  messages      Message[]
+  offers        Offer[]
+  orders        Order[]
+  products      Product[]
+  profiles      Profile[]
+  projects      Project[]
+  ratings       Rating[]
+  reviews       Review[]
+  roles         Role[]
+  suggestions   Suggestion[]
+  tags          Tag[]
+  tokens        Token[]
+  tradeIdeas    TradeIdea[]
+  trades        Trade[]
+  transactions  Transaction[]
+  votes         Vote[]
+  payments      Payment[]
+  permissions   Permission[]
+  stats         Stat[]
+  recordUpdates RecordUpdate[]
+  comments      Comment[]
+  forms         Form[]
+  metaverses    Metaverse[]
+  referrals     Referral[]
+  chains        Chain[]
+  polls         Poll[]
+  raffles       Raffle[]
+  cloudItems    CloudItem[]
+  Company       Company[]
+  Person        Person[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("applications")
+}
+
+model Chain {
+  id            String        @id @db.Uuid
+  name          String        @db.VarChar(100)
+  key           String?       @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String?       @default("draft") @db.VarChar(100)
+  applicationId String        @db.Uuid
+  ownerId       String?       @db.Uuid
+  createdById   String?       @db.Uuid
+  editedById    String?       @db.Uuid
+  deletedById   String?       @db.Uuid
+  createdAt     DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?     @db.Timestamptz(6)
+  deletedAt     DateTime?     @db.Timestamptz(6)
+  type          String?       @db.VarChar(100)
+  standard      String?       @db.VarChar(100)
+  licenseId     String?       @db.Uuid
+  application   Application?  @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?      @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?      @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?      @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?      @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  assets        Asset[]
+  transactions  Transaction[]
+  profiles      Profile[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("chains")
+}
+
+model Asset {
+  id            String        @id @db.Uuid
+  name          String        @db.VarChar(100)
+  key           String?       @db.VarChar(100)
+  uri           String?
+  meta          Json
+  status        String?       @default("draft") @db.VarChar(100)
+  applicationId String        @db.Uuid
+  metaverseId   String?       @db.Uuid
+  chainId       String        @db.Uuid
+  ownerId       String?       @db.Uuid
+  createdById   String?       @db.Uuid
+  editedById    String?       @db.Uuid
+  deletedById   String?       @db.Uuid
+  createdAt     DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?     @db.Timestamptz(6)
+  deletedAt     DateTime?     @db.Timestamptz(6)
+  type          String?       @db.VarChar(100)
+  standard      String?       @db.VarChar(100)
+  licenseId     String?       @db.Uuid
+  metaverse     Metaverse?    @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  application   Application?  @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?      @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?      @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?      @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?      @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  license       AssetLicense? @relation(fields: [licenseId], references: [id], onUpdate: NoAction)
+  chain         Chain?        @relation(fields: [chainId], references: [id])
+  items         GameItem[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("assets")
+}
+
+model GameItem {
+  id              String                @id @db.Uuid
+  name            String                @db.VarChar(100)
+  key             String?               @db.VarChar(100)
+  token           String?               @db.VarChar(500)
+  meta            Json
+  status          String?               @default("draft") @db.VarChar(100)
+  assetId         String                @db.Uuid
+  metaverseId     String?               @db.Uuid
+  ownerId         String?               @db.Uuid
+  createdById     String?               @db.Uuid
+  editedById      String?               @db.Uuid
+  deletedById     String?               @db.Uuid
+  createdAt       DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime?             @db.Timestamptz(6)
+  deletedAt       DateTime?             @db.Timestamptz(6)
+  chain           String?               @db.VarChar(30)
+  asset           Asset?                @relation(fields: [assetId], references: [id], onUpdate: NoAction)
+  createdBy       Profile?              @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy       Profile?              @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy        Profile?              @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner           Profile?              @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  itemsOnProfiles GameItemsOnProfiles[]
+  metaverse       Metaverse?            @relation(fields: [metaverseId], references: [id])
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("items")
+}
+
+model GameItemsOnProfiles {
+  id        String   @id @db.Uuid
+  profileId String   @db.Uuid
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  itemId    String   @db.Uuid
+  item      GameItem @relation(fields: [itemId], references: [id], onUpdate: NoAction)
+  status    String   @default("draft") @db.VarChar(100)
+
+  @@index([profileId, itemId])
+  @@map("gameItemsOnProfiles")
+}
+
+model Badge {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String?      @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("badges")
+}
+
+model BattlePass {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("battlepasses")
+}
+
+model Bounty {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  description   String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("bounties")
+}
+
+model Collection {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("collections")
+}
+
+model Community {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  // currentactiveProfiles                       String?  @db.Uuid
+  // dailyactiveProfiles                         String?  @db.Uuid
+  // monthlyactiveProfiles                       String?  @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  ideas         Idea[]
+  products      Product[]
+  projects      Project[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("communities")
+}
+
+model Discussion {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  content       String?
+  parentId      String?      @db.Uuid
+  rootMessageId String?      @db.Uuid
+  type          String?      @default("discussion")
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("discussions")
+}
+
+model Event {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("events")
+}
+
+model Exchange {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("exchanges")
+}
+
+model File {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  storageType   String?      @db.VarChar(100)
+  accessType    String?      @db.VarChar(100)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("files")
+}
+
+model Idea {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  type          String?      @db.VarChar(100)
+  communityId   String?      @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  community     Community?   @relation(fields: [communityId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("ideas")
+}
+
+model Leaderboard {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  productId     String?      @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  product       Product?     @relation(fields: [productId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("leaderboards")
+}
+
+model AssetLicense {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  assets        Asset[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("licenses")
+}
+
+model Log {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("logs")
+}
+
+model MarketPair {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("marketPairs")
+}
+
+model Market {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("markets")
+}
+
+model Message {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  content       String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  type          String?      @db.VarChar(100)
+  replyToId     String?      @db.Uuid
+  parentId      String?      @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  parent        Message?     @relation("parent", fields: [parentId], references: [id], onUpdate: NoAction)
+  messages      Message[]    @relation("parent")
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("messages")
+}
+
+model Offer {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("offers")
+}
+
+model Order {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("orders")
+}
+
+model Product {
+  id             String          @id @db.Uuid
+  name           String          @db.VarChar(100)
+  key            String?         @db.VarChar(100)
+  value          String?
+  meta           Json
+  status         String          @default("draft") @db.VarChar(100)
+  applicationId  String          @db.Uuid
+  ownerId        String?         @db.Uuid
+  createdById    String?         @db.Uuid
+  editedById     String?         @db.Uuid
+  deletedById    String?         @db.Uuid
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime?       @db.Timestamptz(6)
+  deletedAt      DateTime?       @db.Timestamptz(6)
+  communityId    String?         @db.Uuid
+  type           String?         @default("game") @db.VarChar(100)
+  releaseDate    DateTime?       @db.Timestamptz(6)
+  tags           String[]        @default([])
+  application    Application?    @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  community      Community?      @relation(fields: [communityId], references: [id], onUpdate: NoAction)
+  createdBy      Profile?        @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy      Profile?        @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy       Profile?        @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner          Profile?        @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  projects       Project[]
+  leaderboards   Leaderboard[]
+  games          Game[]
+  productUpdates ProductUpdate[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@index([tags], type: Gin)
+  @@map("products")
+}
+
+model Profile {
+  id             String       @id @db.Uuid
+  name           String?      @db.VarChar(100)
+  key            String?      @db.VarChar(100)
+  value          String?
+  meta           Json
+  points         Float?
+  coins          Float?
+  activityRating Int          @default(0)
+  status         String?      @default("draft") @db.VarChar(100)
+  applicationId  String       @db.Uuid
+  createdById    String?      @db.Uuid
+  editedById     String?      @db.Uuid
+  deletedById    String?      @db.Uuid
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime?    @db.Timestamptz(6)
+  deletedAt      DateTime?    @db.Timestamptz(6)
+  address        String?      @db.VarChar(100)
+  avatar         String?      @db.VarChar(100)
+  role           String?      @default("user")
+  accountId      String?      @db.Uuid
+  privateKey     String?      @db.VarChar(300)
+  signature      String?      @db.VarChar(200)
+  chainId        String?      @db.Uuid
+  chain          Chain?       @relation(fields: [chainId], references: [id])
+  createdBy      Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy      Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy       Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  account        Account?     @relation(fields: [accountId], references: [id], onUpdate: NoAction)
+  application    Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+
+  assets                            Asset[]                    @relation("owner")
+  createdAssets                     Asset[]                    @relation("createdBy")
+  editedAssets                      Asset[]                    @relation("editedBy")
+  deletedAssets                     Asset[]                    @relation("deletedBy")
+  badges                            Badge[]                    @relation("owner")
+  createdBadges                     Badge[]                    @relation("createdBy")
+  editedBadges                      Badge[]                    @relation("editedBy")
+  deletedBadges                     Badge[]                    @relation("deletedBy")
+  battlePasss                       BattlePass[]               @relation("owner")
+  createdBattlePasss                BattlePass[]               @relation("createdBy")
+  editedBattlePasss                 BattlePass[]               @relation("editedBy")
+  deletedBattlePasss                BattlePass[]               @relation("deletedBy")
+  bountys                           Bounty[]                   @relation("owner")
+  createdBountys                    Bounty[]                   @relation("createdBy")
+  editedBountys                     Bounty[]                   @relation("editedBy")
+  deletedBountys                    Bounty[]                   @relation("deletedBy")
+  collections                       Collection[]               @relation("owner")
+  createdCollections                Collection[]               @relation("createdBy")
+  editedCollections                 Collection[]               @relation("editedBy")
+  deletedCollections                Collection[]               @relation("deletedBy")
+  communities                       Community[]                @relation("owner")
+  createdCommunities                Community[]                @relation("createdBy")
+  editedCommunities                 Community[]                @relation("editedBy")
+  deletedCommunities                Community[]                @relation("deletedBy")
+  discussions                       Discussion[]               @relation("owner")
+  createdDiscussions                Discussion[]               @relation("createdBy")
+  editedDiscussions                 Discussion[]               @relation("editedBy")
+  deletedDiscussions                Discussion[]               @relation("deletedBy")
+  events                            Event[]                    @relation("owner")
+  createdEvents                     Event[]                    @relation("createdBy")
+  editedEvents                      Event[]                    @relation("editedBy")
+  deletedEvents                     Event[]                    @relation("deletedBy")
+  exchanges                         Exchange[]                 @relation("owner")
+  createdExchanges                  Exchange[]                 @relation("createdBy")
+  editedExchanges                   Exchange[]                 @relation("editedBy")
+  deletedExchanges                  Exchange[]                 @relation("deletedBy")
+  files                             File[]                     @relation("owner")
+  createdFiles                      File[]                     @relation("createdBy")
+  editedFiles                       File[]                     @relation("editedBy")
+  deletedFiles                      File[]                     @relation("deletedBy")
+  ideas                             Idea[]                     @relation("owner")
+  createdIdeas                      Idea[]                     @relation("createdBy")
+  editedIdeas                       Idea[]                     @relation("editedBy")
+  deletedIdeas                      Idea[]                     @relation("deletedBy")
+  leaderboards                      Leaderboard[]              @relation("owner")
+  createdLeaderboards               Leaderboard[]              @relation("createdBy")
+  editedLeaderboards                Leaderboard[]              @relation("editedBy")
+  deletedLeaderboards               Leaderboard[]              @relation("deletedBy")
+  assetLicenses                     AssetLicense[]             @relation("owner")
+  createdAssetLicenses              AssetLicense[]             @relation("createdBy")
+  editedAssetLicenses               AssetLicense[]             @relation("editedBy")
+  deletedAssetLicenses              AssetLicense[]             @relation("deletedBy")
+  logs                              Log[]                      @relation("owner")
+  createdLogs                       Log[]                      @relation("createdBy")
+  editedLogs                        Log[]                      @relation("editedBy")
+  deletedLogs                       Log[]                      @relation("deletedBy")
+  marketPairs                       MarketPair[]               @relation("owner")
+  createdMarketPairs                MarketPair[]               @relation("createdBy")
+  editedMarketPairs                 MarketPair[]               @relation("editedBy")
+  deletedMarketPairs                MarketPair[]               @relation("deletedBy")
+  markets                           Market[]                   @relation("owner")
+  createdMarkets                    Market[]                   @relation("createdBy")
+  editedMarkets                     Market[]                   @relation("editedBy")
+  deletedMarkets                    Market[]                   @relation("deletedBy")
+  messages                          Message[]                  @relation("owner")
+  createdMessages                   Message[]                  @relation("createdBy")
+  editedMessages                    Message[]                  @relation("editedBy")
+  deletedMessages                   Message[]                  @relation("deletedBy")
+  offers                            Offer[]                    @relation("owner")
+  createdOffers                     Offer[]                    @relation("createdBy")
+  editedOffers                      Offer[]                    @relation("editedBy")
+  deletedOffers                     Offer[]                    @relation("deletedBy")
+  orders                            Order[]                    @relation("owner")
+  createdOrders                     Order[]                    @relation("createdBy")
+  editedOrders                      Order[]                    @relation("editedBy")
+  deletedOrders                     Order[]                    @relation("deletedBy")
+  products                          Product[]                  @relation("owner")
+  createdProducts                   Product[]                  @relation("createdBy")
+  editedProducts                    Product[]                  @relation("editedBy")
+  deletedProducts                   Product[]                  @relation("deletedBy")
+  createdProfiles                   Profile[]                  @relation("createdBy")
+  editedProfiles                    Profile[]                  @relation("editedBy")
+  deletedProfiles                   Profile[]                  @relation("deletedBy")
+  projects                          Project[]                  @relation("owner")
+  createdProjects                   Project[]                  @relation("createdBy")
+  editedProjects                    Project[]                  @relation("editedBy")
+  deletedProjects                   Project[]                  @relation("deletedBy")
+  ratings                           Rating[]                   @relation("owner")
+  createdRatings                    Rating[]                   @relation("createdBy")
+  editedRatings                     Rating[]                   @relation("editedBy")
+  deletedRatings                    Rating[]                   @relation("deletedBy")
+  realms                            GameRealm[]                @relation("owner")
+  createdGameRealms                 GameRealm[]                @relation("createdBy")
+  editedGameRealms                  GameRealm[]                @relation("editedBy")
+  deletedGameRealms                 GameRealm[]                @relation("deletedBy")
+  reviews                           Review[]                   @relation("owner")
+  createdReviews                    Review[]                   @relation("createdBy")
+  editedReviews                     Review[]                   @relation("editedBy")
+  deletedReviews                    Review[]                   @relation("deletedBy")
+  roles                             Role[]                     @relation("owner")
+  createdRoles                      Role[]                     @relation("createdBy")
+  editedRoles                       Role[]                     @relation("editedBy")
+  deletedRoles                      Role[]                     @relation("deletedBy")
+  gameServers                       GameServer[]               @relation("owner")
+  createdGameServers                GameServer[]               @relation("createdBy")
+  editedGameServers                 GameServer[]               @relation("editedBy")
+  deletedGameServers                GameServer[]               @relation("deletedBy")
+  suggestions                       Suggestion[]               @relation("owner")
+  createdSuggestions                Suggestion[]               @relation("createdBy")
+  editedSuggestions                 Suggestion[]               @relation("editedBy")
+  deletedSuggestions                Suggestion[]               @relation("deletedBy")
+  tags                              Tag[]                      @relation("owner")
+  createdTags                       Tag[]                      @relation("createdBy")
+  editedTags                        Tag[]                      @relation("editedBy")
+  deletedTags                       Tag[]                      @relation("deletedBy")
+  tokens                            Token[]                    @relation("owner")
+  createdTokens                     Token[]                    @relation("createdBy")
+  editedTokens                      Token[]                    @relation("editedBy")
+  deletedTokens                     Token[]                    @relation("deletedBy")
+  gameTournaments                   GameTournament[]           @relation("owner")
+  createdGameTournaments            GameTournament[]           @relation("createdBy")
+  editedGameTournaments             GameTournament[]           @relation("editedBy")
+  deletedGameTournaments            GameTournament[]           @relation("deletedBy")
+  tradeIdeas                        TradeIdea[]                @relation("owner")
+  createdTradeIdeas                 TradeIdea[]                @relation("createdBy")
+  editedTradeIdeas                  TradeIdea[]                @relation("editedBy")
+  deletedTradeIdeas                 TradeIdea[]                @relation("deletedBy")
+  trades                            Trade[]                    @relation("owner")
+  buyerTrades                       Trade[]                    @relation("buyer")
+  createdTrades                     Trade[]                    @relation("createdBy")
+  editedTrades                      Trade[]                    @relation("editedBy")
+  deletedTrades                     Trade[]                    @relation("deletedBy")
+  transactions                      Transaction[]              @relation("owner")
+  createdTransactions               Transaction[]              @relation("createdBy")
+  editedTransactions                Transaction[]              @relation("editedBy")
+  deletedTransactions               Transaction[]              @relation("deletedBy")
+  votes                             Vote[]                     @relation("owner")
+  createdVotes                      Vote[]                     @relation("createdBy")
+  editedVotes                       Vote[]                     @relation("editedBy")
+  deletedVotes                      Vote[]                     @relation("deletedBy")
+  createdPayments                   Payment[]                  @relation("createdBy")
+  editedPayments                    Payment[]                  @relation("editedBy")
+  deletedPayments                   Payment[]                  @relation("deletedBy")
+  permissions                       Permission[]               @relation("owner")
+  createdByPermissions              Permission[]               @relation("createdBy")
+  editedByPermissions               Permission[]               @relation("editedBy")
+  deletedByPermissions              Permission[]               @relation("deletedBy")
+  stats                             Stat[]                     @relation("owner")
+  createdByStats                    Stat[]                     @relation("createdBy")
+  editedByStats                     Stat[]                     @relation("editedBy")
+  deletedByStats                    Stat[]                     @relation("deletedBy")
+  recordUpdates                     RecordUpdate[]             @relation("owner")
+  createdByRecordUpdates            RecordUpdate[]             @relation("createdBy")
+  editedByRecordUpdates             RecordUpdate[]             @relation("editedBy")
+  deletedByRecordUpdates            RecordUpdate[]             @relation("deletedBy")
+  comments                          Comment[]                  @relation("owner")
+  createdByComments                 Comment[]                  @relation("createdBy")
+  editedByComments                  Comment[]                  @relation("editedBy")
+  deletedByComments                 Comment[]                  @relation("deletedBy")
+  forms                             Form[]                     @relation("owner")
+  createdByForms                    Form[]                     @relation("createdBy")
+  editedByForms                     Form[]                     @relation("editedBy")
+  deletedByForms                    Form[]                     @relation("deletedBy")
+  gameCharacters                    GameCharacter[]            @relation("owner")
+  createdByGameCharacters           GameCharacter[]            @relation("createdBy")
+  editedByGameCharacters            GameCharacter[]            @relation("editedBy")
+  deletedByGameCharacters           GameCharacter[]            @relation("deletedBy")
+  gameTeams                         GameTeam[]                 @relation("owner")
+  createdByGameTeams                GameTeam[]                 @relation("createdBy")
+  editedByGameTeams                 GameTeam[]                 @relation("editedBy")
+  deletedByGameTeams                GameTeam[]                 @relation("deletedBy")
+  metaverses                        Metaverse[]                @relation("owner")
+  createdByMetaverses               Metaverse[]                @relation("createdBy")
+  editedByMetaverses                Metaverse[]                @relation("editedBy")
+  deletedByMetaverses               Metaverse[]                @relation("deletedBy")
+  createdByReferrals                Referral[]                 @relation("createdBy")
+  editedByReferrals                 Referral[]                 @relation("editedBy")
+  deletedByReferrals                Referral[]                 @relation("deletedBy")
+  recipientReferrals                Referral[]                 @relation("recipient")
+  senderReferrals                   Referral[]                 @relation("sender")
+  createdByGameItem                 GameItem[]                 @relation("createdBy")
+  editedByGameItem                  GameItem[]                 @relation("editedBy")
+  deletedByGameItem                 GameItem[]                 @relation("deletedBy")
+  gameItems                         GameItem[]                 @relation("owner")
+  createdByChain                    Chain[]                    @relation("createdBy")
+  editedByChain                     Chain[]                    @relation("editedBy")
+  deletedByChain                    Chain[]                    @relation("deletedBy")
+  chains                            Chain[]                    @relation("owner")
+  createdByGameSkill                GameSkill[]                @relation("createdBy")
+  editedByGameSkill                 GameSkill[]                @relation("editedBy")
+  deletedByGameSkill                GameSkill[]                @relation("deletedBy")
+  gameSkills                        GameSkill[]                @relation("owner")
+  createdByGameCharacterAbility     GameCharacterAbility[]     @relation("createdBy")
+  editedByGameCharacterAbility      GameCharacterAbility[]     @relation("editedBy")
+  deletedByGameCharacterAbility     GameCharacterAbility[]     @relation("deletedBy")
+  gameCharacterAbilities            GameCharacterAbility[]     @relation("owner")
+  createdByGameItemRecipe           GameItemRecipe[]           @relation("createdBy")
+  editedByGameItemRecipe            GameItemRecipe[]           @relation("editedBy")
+  deletedByGameItemRecipe           GameItemRecipe[]           @relation("deletedBy")
+  gameItemRecipes                   GameItemRecipe[]           @relation("owner")
+  createdByGameItemSkin             GameItemSkin[]             @relation("createdBy")
+  editedByGameItemSkin              GameItemSkin[]             @relation("editedBy")
+  deletedByGameItemSkin             GameItemSkin[]             @relation("deletedBy")
+  gameItemSkins                     GameItemSkin[]             @relation("owner")
+  createdByGameStash                GameStash[]                @relation("createdBy")
+  editedByGameStash                 GameStash[]                @relation("editedBy")
+  deletedByGameStash                GameStash[]                @relation("deletedBy")
+  gameStashes                       GameStash[]                @relation("owner")
+  createdByGameBiome                GameBiome[]                @relation("createdBy")
+  editedByGameBiome                 GameBiome[]                @relation("editedBy")
+  deletedByGameBiome                GameBiome[]                @relation("deletedBy")
+  gameBiomes                        GameBiome[]                @relation("owner")
+  createdByGamePlanet               GamePlanet[]               @relation("createdBy")
+  editedByGamePlanet                GamePlanet[]               @relation("editedBy")
+  deletedByGamePlanet               GamePlanet[]               @relation("deletedBy")
+  gamePlanets                       GamePlanet[]               @relation("owner")
+  createdByGameSolarSystem          GameSolarSystem[]          @relation("createdBy")
+  editedByGameSolarSystem           GameSolarSystem[]          @relation("editedBy")
+  deletedByGameSolarSystem          GameSolarSystem[]          @relation("deletedBy")
+  gameSolarSystems                  GameSolarSystem[]          @relation("owner")
+  createdByGameUniverse             GameUniverse[]             @relation("createdBy")
+  editedByGameUniverse              GameUniverse[]             @relation("editedBy")
+  deletedByGameUniverse             GameUniverse[]             @relation("deletedBy")
+  gameUniverses                     GameUniverse[]             @relation("owner")
+  createdByGameStar                 GameStar[]                 @relation("createdBy")
+  editedByGameStar                  GameStar[]                 @relation("editedBy")
+  deletedByGameStar                 GameStar[]                 @relation("deletedBy")
+  gameStars                         GameStar[]                 @relation("owner")
+  createdByGameArea                 GameArea[]                 @relation("createdBy")
+  editedByGameArea                  GameArea[]                 @relation("editedBy")
+  deletedByGameArea                 GameArea[]                 @relation("deletedBy")
+  gameAreas                         GameArea[]                 @relation("owner")
+  createdByGameAct                  GameAct[]                  @relation("createdBy")
+  editedByGameAct                   GameAct[]                  @relation("editedBy")
+  deletedByGameAct                  GameAct[]                  @relation("deletedBy")
+  gameActs                          GameAct[]                  @relation("owner")
+  createdByGameCharacterClass       GameCharacterClass[]       @relation("createdBy")
+  editedByGameCharacterClass        GameCharacterClass[]       @relation("editedBy")
+  deletedByGameCharacterClass       GameCharacterClass[]       @relation("deletedBy")
+  gameCharacterClasses              GameCharacterClass[]       @relation("owner")
+  createdByGameCharacterFaction     GameCharacterFaction[]     @relation("createdBy")
+  editedByGameCharacterFaction      GameCharacterFaction[]     @relation("editedBy")
+  deletedByGameCharacterFaction     GameCharacterFaction[]     @relation("deletedBy")
+  gameCharacterFactions             GameCharacterFaction[]     @relation("owner")
+  createdByGameEra                  GameEra[]                  @relation("createdBy")
+  editedByGameEra                   GameEra[]                  @relation("editedBy")
+  deletedByGameEra                  GameEra[]                  @relation("deletedBy")
+  gameEras                          GameEra[]                  @relation("owner")
+  createdByGameSeason               GameSeason[]               @relation("createdBy")
+  editedByGameSeason                GameSeason[]               @relation("editedBy")
+  deletedByGameSeason               GameSeason[]               @relation("deletedBy")
+  gameSeasons                       GameSeason[]               @relation("owner")
+  createdByGameItemAttribute        GameItemAttribute[]        @relation("createdBy")
+  editedByGameItemAttribute         GameItemAttribute[]        @relation("editedBy")
+  deletedByGameItemAttribute        GameItemAttribute[]        @relation("deletedBy")
+  gameItemAttributes                GameItemAttribute[]        @relation("owner")
+  createdByGameItemMaterial         GameItemMaterial[]         @relation("createdBy")
+  editedByGameItemMaterial          GameItemMaterial[]         @relation("editedBy")
+  deletedByGameItemMaterial         GameItemMaterial[]         @relation("deletedBy")
+  gameItemMaterials                 GameItemMaterial[]         @relation("owner")
+  createdByGameItemSet              GameItemSet[]              @relation("createdBy")
+  editedByGameItemSet               GameItemSet[]              @relation("editedBy")
+  deletedByGameItemSet              GameItemSet[]              @relation("deletedBy")
+  gameItemSets                      GameItemSet[]              @relation("owner")
+  createdByGameItemSlot             GameItemSlot[]             @relation("createdBy")
+  editedByGameItemSlot              GameItemSlot[]             @relation("editedBy")
+  deletedByGameItemSlot             GameItemSlot[]             @relation("deletedBy")
+  gameItemSlots                     GameItemSlot[]             @relation("owner")
+  createdByGameItemRarity           GameItemRarity[]           @relation("createdBy")
+  editedByGameItemRarity            GameItemRarity[]           @relation("editedBy")
+  deletedByGameItemRarity           GameItemRarity[]           @relation("deletedBy")
+  gameItemRarities                  GameItemRarity[]           @relation("owner")
+  createdByGameItemType             GameItemType[]             @relation("createdBy")
+  editedByGameItemType              GameItemType[]             @relation("editedBy")
+  deletedByGameItemType             GameItemType[]             @relation("deletedBy")
+  gameItemTypes                     GameItemType[]             @relation("owner")
+  createdByGameItemSubType          GameItemSubType[]          @relation("createdBy")
+  editedByGameItemSubType           GameItemSubType[]          @relation("editedBy")
+  deletedByGameItemSubType          GameItemSubType[]          @relation("deletedBy")
+  gameItemSubTypes                  GameItemSubType[]          @relation("owner")
+  createdByGameItemSpecificType     GameItemSpecificType[]     @relation("createdBy")
+  editedByGameItemSpecificType      GameItemSpecificType[]     @relation("editedBy")
+  deletedByGameItemSpecificType     GameItemSpecificType[]     @relation("deletedBy")
+  gameItemSpecificTypes             GameItemSpecificType[]     @relation("owner")
+  createdByGameItemAffix            GameItemAffix[]            @relation("createdBy")
+  editedByGameItemAffix             GameItemAffix[]            @relation("editedBy")
+  deletedByGameItemAffix            GameItemAffix[]            @relation("deletedBy")
+  gameItemAffixes                   GameItemAffix[]            @relation("owner")
+  createdByGameCharacterGender      GameCharacterGender[]      @relation("createdBy")
+  editedByGameCharacterGender       GameCharacterGender[]      @relation("editedBy")
+  deletedByGameCharacterGender      GameCharacterGender[]      @relation("deletedBy")
+  gameCharacterGenders              GameCharacterGender[]      @relation("owner")
+  createdByGameCharacterRace        GameCharacterRace[]        @relation("createdBy")
+  editedByGameCharacterRace         GameCharacterRace[]        @relation("editedBy")
+  deletedByGameCharacterRace        GameCharacterRace[]        @relation("deletedBy")
+  gameCharacterRaces                GameCharacterRace[]        @relation("owner")
+  createdByGameCharacterPersonality GameCharacterPersonality[] @relation("createdBy")
+  editedByGameCharacterPersonality  GameCharacterPersonality[] @relation("editedBy")
+  deletedByGameCharacterPersonality GameCharacterPersonality[] @relation("deletedBy")
+  gameCharacterPersonalities        GameCharacterPersonality[] @relation("owner")
+  createdByGameCharacterTitle       GameCharacterTitle[]       @relation("createdBy")
+  editedByGameCharacterTitle        GameCharacterTitle[]       @relation("editedBy")
+  deletedByGameCharacterTitle       GameCharacterTitle[]       @relation("deletedBy")
+  gameCharacterTitles               GameCharacterTitle[]       @relation("owner")
+  createdByGameLore                 GameLore[]                 @relation("createdBy")
+  editedByGameLore                  GameLore[]                 @relation("editedBy")
+  deletedByGameLore                 GameLore[]                 @relation("deletedBy")
+  gameLores                         GameLore[]                 @relation("owner")
+  createdByGameEnergy               GameEnergy[]               @relation("createdBy")
+  editedByGameEnergy                GameEnergy[]               @relation("editedBy")
+  deletedByGameEnergy               GameEnergy[]               @relation("deletedBy")
+  gameEnergies                      GameEnergy[]               @relation("owner")
+  createdByGameGuide                GameGuide[]                @relation("createdBy")
+  editedByGameGuide                 GameGuide[]                @relation("editedBy")
+  deletedByGameGuide                GameGuide[]                @relation("deletedBy")
+  gameGuides                        GameGuide[]                @relation("owner")
+  createdByAchievement              Achievement[]              @relation("createdBy")
+  editedByAchievement               Achievement[]              @relation("editedBy")
+  deletedByAchievement              Achievement[]              @relation("deletedBy")
+  achievements                      Achievement[]              @relation("owner")
+  createdByGame                     Game[]                     @relation("createdBy")
+  editedByGame                      Game[]                     @relation("editedBy")
+  deletedByGame                     Game[]                     @relation("deletedBy")
+  games                             Game[]                     @relation("owner")
+  createdByGameNpc                  GameNpc[]                  @relation("createdBy")
+  editedByGameNpc                   GameNpc[]                  @relation("editedBy")
+  deletedByGameNpc                  GameNpc[]                  @relation("deletedBy")
+  gameNpcs                          GameNpc[]                  @relation("owner")
+  createdByGameCharacterAttribute   GameCharacterAttribute[]   @relation("createdBy")
+  editedByGameCharacterAttribute    GameCharacterAttribute[]   @relation("editedBy")
+  deletedByGameCharacterAttribute   GameCharacterAttribute[]   @relation("deletedBy")
+  gameCharacterAttributes           GameCharacterAttribute[]   @relation("owner")
+  createdByGameCharacterType        GameCharacterType[]        @relation("createdBy")
+  editedByGameCharacterType         GameCharacterType[]        @relation("editedBy")
+  deletedByGameCharacterType        GameCharacterType[]        @relation("deletedBy")
+  gameCharacterTypes                GameCharacterType[]        @relation("owner")
+  createdByGameAreaType             GameAreaType[]             @relation("createdBy")
+  editedByGameAreaType              GameAreaType[]             @relation("editedBy")
+  deletedByGameAreaType             GameAreaType[]             @relation("deletedBy")
+  gameAreaTypes                     GameAreaType[]             @relation("owner")
+  createdByGameAreaLandmark         GameAreaLandmark[]         @relation("createdBy")
+  editedByGameAreaLandmark          GameAreaLandmark[]         @relation("editedBy")
+  deletedByGameAreaLandmark         GameAreaLandmark[]         @relation("deletedBy")
+  gameAreaLandmarks                 GameAreaLandmark[]         @relation("owner")
+  createdByGameBiomeFeature         GameBiomeFeature[]         @relation("createdBy")
+  editedByGameBiomeFeature          GameBiomeFeature[]         @relation("editedBy")
+  deletedByGameBiomeFeature         GameBiomeFeature[]         @relation("deletedBy")
+  gameBiomeFeatures                 GameBiomeFeature[]         @relation("owner")
+  createdByGameSkillMod             GameSkillMod[]             @relation("createdBy")
+  editedByGameSkillMod              GameSkillMod[]             @relation("editedBy")
+  deletedByGameSkillMod             GameSkillMod[]             @relation("deletedBy")
+  gameSkillMods                     GameSkillMod[]             @relation("owner")
+  createdByGameSkillClassification  GameSkillClassification[]  @relation("createdBy")
+  editedByGameSkillClassification   GameSkillClassification[]  @relation("editedBy")
+  deletedByGameSkillClassification  GameSkillClassification[]  @relation("deletedBy")
+  gameSkillClassifications          GameSkillClassification[]  @relation("owner")
+  createdByGameSkillCondition       GameSkillCondition[]       @relation("createdBy")
+  editedByGameSkillCondition        GameSkillCondition[]       @relation("editedBy")
+  deletedByGameSkillCondition       GameSkillCondition[]       @relation("deletedBy")
+  gameSkillConditions               GameSkillCondition[]       @relation("owner")
+  createdByGameSkillStatusEffect    GameSkillStatusEffect[]    @relation("createdBy")
+  editedByGameSkillStatusEffect     GameSkillStatusEffect[]    @relation("editedBy")
+  deletedByGameSkillStatusEffect    GameSkillStatusEffect[]    @relation("deletedBy")
+  gameSkillStatusEffects            GameSkillStatusEffect[]    @relation("owner")
+  createdByGameSkillTree            GameSkillTree[]            @relation("createdBy")
+  editedByGameSkillTree             GameSkillTree[]            @relation("editedBy")
+  deletedByGameSkillTree            GameSkillTree[]            @relation("deletedBy")
+  gameSkillTrees                    GameSkillTree[]            @relation("owner")
+  createdByGameSkillTreeNode        GameSkillTreeNode[]        @relation("createdBy")
+  editedByGameSkillTreeNode         GameSkillTreeNode[]        @relation("editedBy")
+  deletedByGameSkillTreeNode        GameSkillTreeNode[]        @relation("deletedBy")
+  gameSkillTreeNodes                GameSkillTreeNode[]        @relation("owner")
+  createdByGameAreaNameChoice       GameAreaNameChoice[]       @relation("createdBy")
+  editedByGameAreaNameChoice        GameAreaNameChoice[]       @relation("editedBy")
+  deletedByGameAreaNameChoice       GameAreaNameChoice[]       @relation("deletedBy")
+  gameAreaNameChoices               GameAreaNameChoice[]       @relation("owner")
+  createdByGameCharacterNameChoice  GameCharacterNameChoice[]  @relation("createdBy")
+  editedByGameCharacterNameChoice   GameCharacterNameChoice[]  @relation("editedBy")
+  deletedByGameCharacterNameChoice  GameCharacterNameChoice[]  @relation("deletedBy")
+  gameCharacterNameChoices          GameCharacterNameChoice[]  @relation("owner")
+  createdByValidator                Validator[]                @relation("createdBy")
+  editedByValidator                 Validator[]                @relation("editedBy")
+  deletedByValidator                Validator[]                @relation("deletedBy")
+  validators                        Validator[]                @relation("owner")
+  createdByProductUpdate            ProductUpdate[]            @relation("createdBy")
+  editedByProductUpdate             ProductUpdate[]            @relation("editedBy")
+  deletedByProductUpdate            ProductUpdate[]            @relation("deletedBy")
+  productUpdates                    ProductUpdate[]            @relation("owner")
+  createdByPoll                     Poll[]                     @relation("createdBy")
+  editedByPoll                      Poll[]                     @relation("editedBy")
+  deletedByPoll                     Poll[]                     @relation("deletedBy")
+  polls                             Poll[]                     @relation("owner")
+  createdByGameGalaxy               GameGalaxy[]               @relation("createdBy")
+  editedByGameGalaxy                GameGalaxy[]               @relation("editedBy")
+  deletedByGameGalaxy               GameGalaxy[]               @relation("deletedBy")
+  gameGalaxies                      GameGalaxy[]               @relation("owner")
+  createdByGameQuest                GameQuest[]                @relation("createdBy")
+  editedByGameQuest                 GameQuest[]                @relation("editedBy")
+  deletedByGameQuest                GameQuest[]                @relation("deletedBy")
+  gameQuests                        GameQuest[]                @relation("owner")
+  createdByCloudItem                CloudItem[]                @relation("createdBy")
+  editedByCloudItem                 CloudItem[]                @relation("editedBy")
+  deletedByCloudItem                CloudItem[]                @relation("deletedBy")
+  cloudItems                        CloudItem[]                @relation("owner")
+  createdByRaffle                   Raffle[]                   @relation("createdBy")
+  editedByRaffle                    Raffle[]                   @relation("editedBy")
+  deletedByRaffle                   Raffle[]                   @relation("deletedBy")
+  raffles                           Raffle[]                   @relation("owner")
+  createdByRaffleEntry              RaffleEntry[]              @relation("createdBy")
+  editedByRaffleEntry               RaffleEntry[]              @relation("editedBy")
+  deletedByRaffleEntry              RaffleEntry[]              @relation("deletedBy")
+  raffleEntries                     RaffleEntry[]              @relation("owner")
+  createdByRaffleRequirement        RaffleRequirement[]        @relation("createdBy")
+  editedByRaffleRequirement         RaffleRequirement[]        @relation("editedBy")
+  deletedByRaffleRequirement        RaffleRequirement[]        @relation("deletedBy")
+  raffleRequirements                RaffleRequirement[]        @relation("owner")
+  createdByRaffleReward             RaffleReward[]             @relation("createdBy")
+  editedByRaffleReward              RaffleReward[]             @relation("editedBy")
+  deletedByRaffleReward             RaffleReward[]             @relation("deletedBy")
+  raffleRewards                     RaffleReward[]             @relation("owner")
+  raffleRewardWinners               RaffleReward[]             @relation("winner")
+  createdByProposal                 Proposal[]                 @relation("createdBy")
+  editedByProposal                  Proposal[]                 @relation("editedBy")
+  deletedByProposal                 Proposal[]                 @relation("deletedBy")
+  proposals                         Proposal[]                 @relation("owner")
+  createdByCompany                  Company[]                  @relation("createdBy")
+  editedByCompany                   Company[]                  @relation("editedBy")
+  deletedByCompany                  Company[]                  @relation("deletedBy")
+  companies                         Company[]                  @relation("owner")
+  createdByPerson                   Person[]                   @relation("createdBy")
+  editedByPerson                    Person[]                   @relation("editedBy")
+  deletedByPerson                   Person[]                   @relation("deletedBy")
+  people                            Person[]                   @relation("owner")
+
+  recordUpdatesOnProfiles RecordUpdatesOnProfiles[]
+  commentsOnProfiles      CommentsOnProfiles[]
+  rolesOnProfiles         RolesOnProfiles[]
+  itemsOnProfiles         GameItemsOnProfiles[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("profiles")
+}
+
+model Project {
+  id             String       @id @db.Uuid
+  name           String?      @db.VarChar(100)
+  key            String?      @db.VarChar(100)
+  value          String?
+  meta           Json
+  status         String?      @default("draft") @db.VarChar(100)
+  applicationId  String?      @db.Uuid
+  ownerId        String?      @db.Uuid
+  createdById    String?      @db.Uuid
+  editedById     String?      @db.Uuid
+  deletedById    String?      @db.Uuid
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime?    @db.Timestamptz(6)
+  deletedAt      DateTime?    @db.Timestamptz(6)
+  contractStatus String?      @default("Draft")
+  parentId       String?      @db.Uuid
+  realmId        String?      @db.Uuid
+  communityId    String?      @db.Uuid
+  productId      String?      @db.Uuid
+  ratingId       String?      @db.Uuid
+  application    Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  community      Community?   @relation(fields: [communityId], references: [id], onUpdate: NoAction)
+  createdBy      Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy      Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy       Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner          Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  product        Product?     @relation(fields: [productId], references: [id], onUpdate: NoAction)
+  rating         Rating?      @relation(fields: [ratingId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("projects")
+}
+
+model Rating {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String?      @default("draft") @db.VarChar(100)
+  applicationId String?      @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  votes         Vote[]
+  projects      Project[]
+  comments      Comment[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("ratings")
+}
+
+model GameRealm {
+  id          String    @id @db.Uuid
+  name        String    @db.VarChar(100)
+  key         String?   @db.VarChar(100)
+  value       String?
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+
+  metaverse Metaverse? @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  createdBy Profile?   @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy Profile?   @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy  Profile?   @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner     Profile?   @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("realms")
+}
+
+model Review {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("reviews")
+}
+
+model Role {
+  id                 String               @id @db.Uuid
+  name               String               @db.VarChar(100)
+  key                String?              @db.VarChar(100)
+  value              String?
+  meta               Json
+  status             String               @default("draft") @db.VarChar(100)
+  applicationId      String               @db.Uuid
+  ownerId            String?              @db.Uuid
+  createdById        String?              @db.Uuid
+  editedById         String?              @db.Uuid
+  deletedById        String?              @db.Uuid
+  createdAt          DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime?            @db.Timestamptz(6)
+  deletedAt          DateTime?            @db.Timestamptz(6)
+  application        Application?         @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy          Profile?             @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy          Profile?             @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy           Profile?             @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner              Profile?             @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  rolesOnProfiles    RolesOnProfiles[]
+  permissionsOnRoles PermissionsOnRoles[]
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("roles")
+}
+
+model GameServer {
+  id          String     @id @db.Uuid
+  name        String     @db.VarChar(100)
+  key         String?    @db.VarChar(100)
+  value       String?
+  meta        Json
+  status      String     @default("draft") @db.VarChar(100)
+  metaverseId String     @db.Uuid
+  ownerId     String?    @db.Uuid
+  createdById String?    @db.Uuid
+  editedById  String?    @db.Uuid
+  deletedById String?    @db.Uuid
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?  @db.Timestamptz(6)
+  deletedAt   DateTime?  @db.Timestamptz(6)
+  metaverse   Metaverse? @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  createdBy   Profile?   @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?   @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?   @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?   @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("servers")
+}
+
+model Session {
+  sid     String   @id @db.VarChar(255)
+  meta    Json
+  expired DateTime @db.Timestamptz(6)
+
+  @@map("sessions")
+}
+
+model Suggestion {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("suggestions")
+}
+
+model Tag {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("tags")
+}
+
+model Token {
+  id                String       @id @db.Uuid
+  name              String       @db.VarChar(100)
+  symbol            String       @db.VarChar(100)
+  value             String?
+  meta              Json
+  status            String       @default("draft") @db.VarChar(100)
+  applicationId     String       @db.Uuid
+  ownerId           String?      @db.Uuid
+  createdById       String?      @db.Uuid
+  editedById        String?      @db.Uuid
+  deletedById       String?      @db.Uuid
+  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime?    @db.Timestamptz(6)
+  deletedAt         DateTime?    @db.Timestamptz(6)
+  code              String?      @db.VarChar(100)
+  type              String?      @db.VarChar(100)
+  marketCap         Decimal?     @db.Decimal(8, 2)
+  priceUsd          String?      @db.VarChar(100)
+  priceBtc          String?      @db.VarChar(100)
+  circulatingSupply String?      @db.VarChar(100)
+  volume24h         String?      @db.VarChar(100)
+  application       Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy         Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy         Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy          Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner             Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([symbol])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("tokens")
+}
+
+model GameTournament {
+  id          String     @id @db.Uuid
+  name        String     @db.VarChar(100)
+  key         String?    @db.VarChar(100)
+  value       String?
+  meta        Json
+  status      String     @default("draft") @db.VarChar(100)
+  metaverseId String     @db.Uuid
+  ownerId     String?    @db.Uuid
+  createdById String?    @db.Uuid
+  editedById  String?    @db.Uuid
+  deletedById String?    @db.Uuid
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?  @db.Timestamptz(6)
+  deletedAt   DateTime?  @db.Timestamptz(6)
+  metaverse   Metaverse? @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  createdBy   Profile?   @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?   @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?   @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?   @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("tournaments")
+}
+
+model TradeIdea {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("tradeIdeas")
+}
+
+model Trade {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  buyerId       String?      @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  buyer         Profile?     @relation("buyer", fields: [buyerId], references: [id], onUpdate: NoAction)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("trades")
+}
+
+model Transaction {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  chainId       String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  chain         Chain?       @relation(fields: [chainId], references: [id])
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("transactions")
+}
+
+model Vote {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  ratingId      String?      @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  rating        Rating?      @relation(fields: [ratingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("votes")
+}
+
+model Payment {
+  id            String       @id @db.Uuid
+  name          String?      @db.VarChar(100)
+  key           String?      @db.VarChar(100)
+  value         String?
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+
+  @@index([deletedAt])
+  @@index([key])
+  @@index([name])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("payments")
+}
+
+model Referral {
+  id            String       @id @db.Uuid
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  applicationId String       @db.Uuid
+  recipientId   String       @db.Uuid
+  senderId      String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  recipient     Profile?     @relation("recipient", fields: [recipientId], references: [id], onUpdate: NoAction)
+  sender        Profile?     @relation("sender", fields: [senderId], references: [id], onUpdate: NoAction)
+
+  @@index([deletedAt])
+  @@index([status])
+  @@index([createdAt, updatedAt])
+  @@map("referrals")
+}
+
+model Permission {
+  id            String       @id @db.Uuid
+  name          String       @db.VarChar(100)
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  permissionsOnRoles PermissionsOnRoles[]
+
+  @@map("permissions")
+}
+
+model PermissionsOnRoles {
+  id String @id @db.Uuid
+
+  roleId       String     @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id])
+  permissionId String     @db.Uuid
+  permission   Permission @relation(fields: [permissionId], references: [id], onUpdate: NoAction)
+  status       String     @default("draft") @db.VarChar(100)
+
+  @@index([roleId, permissionId])
+  @@map("permissionsOnRoles")
+}
+
+model RolesOnProfiles {
+  id String @id @db.Uuid
+
+  profileId String  @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id])
+  roleId    String  @db.Uuid
+  role      Role    @relation(fields: [roleId], references: [id], onUpdate: NoAction)
+  status    String  @default("draft") @db.VarChar(100)
+
+  @@index([profileId, roleId])
+  @@map("rolesOnProfiles")
+}
+
+model Stat {
+  id            String    @id @db.Uuid
+  applicationId String    @db.Uuid
+  ownerId       String?   @db.Uuid
+  createdById   String?   @db.Uuid
+  editedById    String?   @db.Uuid
+  deletedById   String?   @db.Uuid
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime? @db.Timestamptz(6)
+  deletedAt     DateTime? @db.Timestamptz(6)
+  number        Int       @default(autoincrement())
+  meta          Json
+
+  application Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy   Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  @@map("stats")
+}
+
+model RecordUpdate {
+  id            String       @id @db.Uuid
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  objectType String @db.VarChar(100)
+  objectId   String @db.Uuid
+  actionType String @db.VarChar(100)
+  reason     String @db.VarChar(100)
+  meta       Json
+
+  recordUpdatesOnForms    RecordUpdatesOnForms[]
+  recordUpdatesOnProfiles RecordUpdatesOnProfiles[]
+
+  @@map("recordUpdates")
+}
+
+model RecordUpdatesOnProfiles {
+  id             String       @id @db.Uuid
+  profileId      String       @db.Uuid
+  profile        Profile      @relation(fields: [profileId], references: [id], onUpdate: NoAction)
+  recordUpdateId String       @db.Uuid
+  recordUpdate   RecordUpdate @relation(fields: [recordUpdateId], references: [id], onUpdate: NoAction)
+  status         String       @default("draft") @db.VarChar(100)
+
+  @@index([profileId, recordUpdateId])
+  @@map("recordUpdatesOnProfiles")
+}
+
+model RecordUpdatesOnForms {
+  id             String       @id @db.Uuid
+  formId         String       @db.Uuid
+  form           Form         @relation(fields: [formId], references: [id], onUpdate: NoAction)
+  recordUpdateId String       @db.Uuid
+  recordUpdate   RecordUpdate @relation(fields: [recordUpdateId], references: [id], onUpdate: NoAction)
+  status         String       @default("draft") @db.VarChar(100)
+
+  @@index([formId, recordUpdateId])
+  @@map("recordUpdatesOnForms")
+}
+
+model Comment {
+  id            String       @id @db.Uuid
+  text          String
+  meta          Json
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  ratingId      String?      @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  rating        Rating?      @relation(fields: [ratingId], references: [id], onUpdate: NoAction)
+
+  comments CommentsOnProfiles[]
+  forms    CommentsOnForms[]
+
+  @@map("comments")
+}
+
+model CommentsOnProfiles {
+  id        String  @id @db.Uuid
+  profileId String  @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id])
+  commentId String  @db.Uuid
+  comment   Comment @relation(fields: [commentId], references: [id], onUpdate: NoAction)
+  status    String  @default("draft") @db.VarChar(100)
+
+  @@index([profileId, commentId])
+  @@map("commentsOnProfiles")
+}
+
+model CommentsOnForms {
+  id        String  @id @db.Uuid
+  formId    String  @db.Uuid
+  form      Form    @relation(fields: [formId], references: [id])
+  commentId String  @db.Uuid
+  comment   Comment @relation(fields: [commentId], references: [id], onUpdate: NoAction)
+  status    String  @default("draft") @db.VarChar(100)
+
+  @@index([formId, commentId])
+  @@map("commentsOnForms")
+}
+
+model Form {
+  id            String       @id @db.Uuid
+  applicationId String       @db.Uuid
+  ownerId       String       @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  ratingId      String?      @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  key                  String                 @db.VarChar(100)
+  name                 String                 @db.VarChar(100)
+  meta                 Json
+  status               String                 @default("draft") @db.VarChar(100)
+  formSubmissions      FormSubmission[]
+  commentsOnForms      CommentsOnForms[]
+  recordUpdatesOnForms RecordUpdatesOnForms[]
+
+  @@map("forms")
+}
+
+model FormSubmission {
+  id     String @id @db.Uuid
+  meta   Json
+  formId String @db.Uuid
+  form   Form   @relation(fields: [formId], references: [id])
+  status String @default("draft") @db.VarChar(100)
+
+  @@map("formSubmissions")
+}
+
+model GameCharacter {
+  id          String     @id @db.Uuid
+  metaverseId String     @db.Uuid
+  ownerId     String     @db.Uuid
+  createdById String?    @db.Uuid
+  editedById  String?    @db.Uuid
+  deletedById String?    @db.Uuid
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?  @db.Timestamptz(6)
+  deletedAt   DateTime?  @db.Timestamptz(6)
+  ratingId    String?    @db.Uuid
+  metaverse   Metaverse? @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  createdBy   Profile?   @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?   @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?   @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?   @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  key               String                  @db.VarChar(100)
+  name              String                  @db.VarChar(100)
+  meta              Json
+  status            String                  @default("draft") @db.VarChar(100)
+  charactersOnTeams GameCharactersOnTeams[]
+  npcs              GameNpc[]
+
+  @@map("gameCharacters")
+}
+
+model GameCharactersOnTeams {
+  id          String        @id @db.Uuid
+  teamId      String        @db.Uuid
+  team        GameTeam      @relation(fields: [teamId], references: [id])
+  characterId String        @db.Uuid
+  character   GameCharacter @relation(fields: [characterId], references: [id], onUpdate: NoAction)
+  status      String        @default("draft") @db.VarChar(100)
+
+  @@index([teamId, characterId])
+  @@map("gameCharactersOnTeams")
+}
+
+model GameTeam {
+  id          String     @id @db.Uuid
+  metaverseId String     @db.Uuid
+  ownerId     String?    @db.Uuid
+  createdById String?    @db.Uuid
+  editedById  String?    @db.Uuid
+  deletedById String?    @db.Uuid
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?  @db.Timestamptz(6)
+  deletedAt   DateTime?  @db.Timestamptz(6)
+  ratingId    String?    @db.Uuid
+  metaverse   Metaverse? @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  createdBy   Profile?   @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?   @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?   @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?   @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  key               String                  @db.VarChar(100)
+  name              String                  @db.VarChar(100)
+  description       String?
+  meta              Json
+  status            String                  @default("draft") @db.VarChar(100)
+  charactersOnTeams GameCharactersOnTeams[]
+
+  @@map("gameTeams")
+}
+
+model GameNpc {
+  id              String             @id @db.Uuid
+  key             String             @db.VarChar(100)
+  name            String             @db.VarChar(100)
+  description     String?
+  characterRaceId String?            @db.Uuid
+  metaverseId     String             @db.Uuid
+  ownerId         String?            @db.Uuid
+  createdById     String?            @db.Uuid
+  editedById      String?            @db.Uuid
+  deletedById     String?            @db.Uuid
+  createdAt       DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime?          @db.Timestamptz(6)
+  deletedAt       DateTime?          @db.Timestamptz(6)
+  createdBy       Profile?           @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy       Profile?           @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy        Profile?           @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner           Profile?           @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  characterRace   GameCharacterRace? @relation(fields: [characterRaceId], references: [id], onUpdate: NoAction)
+  meta            Json
+  status          String             @default("draft") @db.VarChar(100)
+  gameCharacter   GameCharacter?     @relation(fields: [gameCharacterId], references: [id])
+  gameCharacterId String?            @db.Uuid
+
+  @@map("gameNpcs")
+}
+
+model Metaverse {
+  id            String       @id @db.Uuid
+  parentId      String?      @db.Uuid
+  applicationId String       @db.Uuid
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  ratingId      String?      @db.Uuid
+  parent        Metaverse?   @relation("subverses", fields: [parentId], references: [id], onUpdate: NoAction)
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+
+  key          String           @db.VarChar(100)
+  name         String           @default("") @db.VarChar(100)
+  description  String?
+  meta         Json
+  status       String           @default("draft") @db.VarChar(100)
+  children     Metaverse[]      @relation("subverses")
+  assets       Asset[]
+  achievements Achievement[]
+  characters   GameCharacter[]
+  items        GameItem[]
+  teams        GameTeam[]
+  realms       GameRealm[]
+  servers      GameServer[]
+  tournaments  GameTournament[]
+  games        Game[]
+  validators   Validator[]
+  proposals    Proposal[]
+
+  @@map("metaverses")
+}
+
+model GameSkill {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameSkills")
+}
+
+model GameSkillMod {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameSkillMods")
+}
+
+model GameSkillClassification {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameSkillClassifications")
+}
+
+model GameSkillCondition {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameSkillConditions")
+}
+
+model GameSkillStatusEffect {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameSkillStatusEffects")
+}
+
+model GameSkillTree {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameSkillTrees")
+}
+
+model GameSkillTreeNode {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameSkillTreeNodes")
+}
+
+model GameCharacterAbility {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameCharacterAbilities")
+}
+
+model GameCharacterAttribute {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameCharacterAttributes")
+}
+
+model GameCharacterType {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameCharacterTypes")
+}
+
+model GameItemAttribute {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemAttributes")
+}
+
+model GameItemMaterial {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemMaterials")
+}
+
+model GameItemSet {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemSets")
+}
+
+model GameItemSlot {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemSlots")
+}
+
+model GameItemRarity {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemRarities")
+}
+
+model GameItemType {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemTypes")
+}
+
+model GameItemSubType {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemSubTypes")
+}
+
+model GameItemSpecificType {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemSpecificTypes")
+}
+
+model GameItemAffix {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemAffixes")
+}
+
+model GameItemRecipe {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameRecipes")
+}
+
+model GameItemSkin {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameItemSkins")
+}
+
+model GameStash {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameStashes")
+}
+
+model GameBiome {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameBiomes")
+}
+
+model GameBiomeFeature {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameBiomeFeatures")
+}
+
+model GamePlanet {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gamePlanets")
+}
+
+model GameSolarSystem {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameSolarSystems")
+}
+
+model GameGalaxy {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameGalaxies")
+}
+
+model GameStar {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameStars")
+}
+
+model GameUniverse {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameUniverses")
+}
+
+model GameQuest {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(200)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+  type        String    @default("zone") @db.VarChar(100)
+
+  @@map("gameQuests")
+}
+
+model GameArea {
+  id          String             @id @db.Uuid
+  key         String             @db.VarChar(100)
+  name        String             @db.VarChar(200)
+  description String?
+  metaverseId String             @db.Uuid
+  ownerId     String?            @db.Uuid
+  createdById String?            @db.Uuid
+  editedById  String?            @db.Uuid
+  deletedById String?            @db.Uuid
+  createdAt   DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?          @db.Timestamptz(6)
+  deletedAt   DateTime?          @db.Timestamptz(6)
+  createdBy   Profile?           @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?           @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?           @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?           @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String             @default("draft") @db.VarChar(100)
+  type        String             @default("zone") @db.VarChar(100)
+  landmarks   GameAreaLandmark[]
+
+  @@map("gameAreas")
+}
+
+model GameAreaType {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(200)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameAreaTypes")
+}
+
+model GameAreaLandmark {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(200)
+  description String?
+  areaId      String?   @db.Uuid
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+  area        GameArea? @relation(fields: [areaId], references: [id])
+
+  @@map("gameAreaLandmarks")
+}
+
+model GameAct {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameActs")
+}
+
+model GameCharacterClass {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameCharacterClasses")
+}
+
+model GameCharacterRace {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+  GameNpc     GameNpc[]
+
+  @@map("gameCharacterRacees")
+}
+
+model GameCharacterGender {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameCharacterGenders")
+}
+
+model GameCharacterPersonality {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameCharacterPersonalities")
+}
+
+model GameCharacterTitle {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameCharacterTitles")
+}
+
+model GameAreaNameChoice {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameAreaNameChoices")
+}
+
+model GameCharacterNameChoice {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameCharacterNameChoices")
+}
+
+model GameCharacterFaction {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameFactions")
+}
+
+model GameEra {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameEras")
+}
+
+model GameSeason {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameSeasons")
+}
+
+model GameLore {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(200)
+  description String?
+  gameId      String?   @db.Uuid
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameLores")
+}
+
+model GameEnergy {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameEnergies")
+}
+
+model GameGuide {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  content     String?
+  gameId      String    @db.Uuid
+  metaverseId String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("gameGuides")
+}
+
+model Game {
+  id          String     @id @db.Uuid
+  key         String     @db.VarChar(100)
+  name        String     @db.VarChar(100)
+  description String?
+  productId   String     @db.Uuid
+  metaverseId String     @db.Uuid
+  ownerId     String?    @db.Uuid
+  createdById String?    @db.Uuid
+  editedById  String?    @db.Uuid
+  deletedById String?    @db.Uuid
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?  @db.Timestamptz(6)
+  deletedAt   DateTime?  @db.Timestamptz(6)
+  createdBy   Profile?   @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?   @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?   @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?   @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  product     Product?   @relation(fields: [productId], references: [id], onUpdate: NoAction)
+  metaverse   Metaverse? @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String     @default("draft") @db.VarChar(100)
+
+  @@map("games")
+}
+
+model Validator {
+  id          String     @id @db.Uuid
+  key         String     @db.VarChar(100)
+  name        String     @db.VarChar(100)
+  description String?
+  metaverseId String     @db.Uuid
+  ownerId     String?    @db.Uuid
+  createdById String?    @db.Uuid
+  editedById  String?    @db.Uuid
+  deletedById String?    @db.Uuid
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?  @db.Timestamptz(6)
+  deletedAt   DateTime?  @db.Timestamptz(6)
+  createdBy   Profile?   @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?   @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?   @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?   @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  metaverse   Metaverse? @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String     @default("draft") @db.VarChar(100)
+
+  @@map("validators")
+}
+
+model ProductUpdate {
+  id          String    @id @db.Uuid
+  key         String    @db.VarChar(100)
+  name        String    @db.VarChar(100)
+  description String?
+  productId   String    @db.Uuid
+  ownerId     String?   @db.Uuid
+  createdById String?   @db.Uuid
+  editedById  String?   @db.Uuid
+  deletedById String?   @db.Uuid
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  createdBy   Profile?  @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?  @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?  @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?  @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  product     Product?  @relation(fields: [productId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String    @default("draft") @db.VarChar(100)
+
+  @@map("productUpdates")
+}
+
+model Poll {
+  id            String       @id @db.Uuid
+  key           String       @db.VarChar(100)
+  name          String       @db.VarChar(100)
+  description   String?
+  applicationId String?      @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+
+  @@map("polls")
+}
+
+model Raffle {
+  id                String              @id @db.Uuid
+  key               String              @db.VarChar(100)
+  name              String              @db.VarChar(100)
+  content           String?
+  applicationId     String?             @db.Uuid
+  application       Application?        @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  ownerId           String?             @db.Uuid
+  createdById       String?             @db.Uuid
+  editedById        String?             @db.Uuid
+  deletedById       String?             @db.Uuid
+  createdAt         DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime?           @db.Timestamptz(6)
+  deletedAt         DateTime?           @db.Timestamptz(6)
+  createdBy         Profile?            @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy         Profile?            @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy          Profile?            @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner             Profile?            @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta              Json
+  status            String              @default("draft") @db.VarChar(100)
+  rewards           RaffleReward[]
+  RaffleRequirement RaffleRequirement[]
+  RaffleEntry       RaffleEntry[]
+
+  @@map("raffles")
+}
+
+model RaffleRequirement {
+  id                                String                              @id @db.Uuid
+  amount                            Float
+  raffleRewardId                    String?                             @db.Uuid
+  raffleReward                      Raffle?                             @relation(fields: [raffleRewardId], references: [id], onUpdate: NoAction)
+  ownerId                           String?                             @db.Uuid
+  createdById                       String?                             @db.Uuid
+  editedById                        String?                             @db.Uuid
+  deletedById                       String?                             @db.Uuid
+  createdAt                         DateTime                            @default(now()) @db.Timestamptz(6)
+  updatedAt                         DateTime?                           @db.Timestamptz(6)
+  deletedAt                         DateTime?                           @db.Timestamptz(6)
+  createdBy                         Profile?                            @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy                         Profile?                            @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy                          Profile?                            @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner                             Profile?                            @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta                              Json
+  status                            String                              @default("draft") @db.VarChar(100)
+  RaffleRequirementsOnRaffleRewards RaffleRequirementsOnRaffleRewards[]
+
+  @@map("raffleRequirements")
+}
+
+model RaffleReward {
+  id                                String                              @id @db.Uuid
+  raffleId                          String?                             @db.Uuid
+  raffle                            Raffle?                             @relation(fields: [raffleId], references: [id], onUpdate: NoAction)
+  winnerId                          String?                             @db.Uuid
+  ownerId                           String?                             @db.Uuid
+  createdById                       String?                             @db.Uuid
+  editedById                        String?                             @db.Uuid
+  deletedById                       String?                             @db.Uuid
+  createdAt                         DateTime                            @default(now()) @db.Timestamptz(6)
+  updatedAt                         DateTime?                           @db.Timestamptz(6)
+  deletedAt                         DateTime?                           @db.Timestamptz(6)
+  createdBy                         Profile?                            @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy                         Profile?                            @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy                          Profile?                            @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner                             Profile?                            @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  winner                            Profile?                            @relation("winner", fields: [winnerId], references: [id], onUpdate: NoAction)
+  meta                              Json
+  status                            String                              @default("draft") @db.VarChar(100)
+  raffleRequirementsOnRaffleRewards RaffleRequirementsOnRaffleRewards[]
+  entries                           RaffleEntry[]
+
+  @@map("raffleRewards")
+}
+
+model RaffleRequirementsOnRaffleRewards {
+  id                  String            @id @db.Uuid
+  raffleRequirementId String            @db.Uuid
+  raffleRequirement   RaffleRequirement @relation(fields: [raffleRequirementId], references: [id])
+  raffleRewardId      String            @db.Uuid
+  raffleReward        RaffleReward      @relation(fields: [raffleRewardId], references: [id], onUpdate: NoAction)
+  status              String            @default("draft") @db.VarChar(100)
+
+  @@index([raffleRequirementId, raffleRewardId])
+  @@map("raffleRequirementsOnRaffleRewards")
+}
+
+model RaffleEntry {
+  id             String        @id @db.Uuid
+  amount         Float
+  raffleRewardId String?       @db.Uuid
+  raffleReward   RaffleReward? @relation(fields: [raffleRewardId], references: [id], onUpdate: NoAction)
+  ownerId        String?       @db.Uuid
+  createdById    String?       @db.Uuid
+  editedById     String?       @db.Uuid
+  deletedById    String?       @db.Uuid
+  createdAt      DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime?     @db.Timestamptz(6)
+  deletedAt      DateTime?     @db.Timestamptz(6)
+  createdBy      Profile?      @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy      Profile?      @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy       Profile?      @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner          Profile?      @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta           Json
+  status         String        @default("draft") @db.VarChar(100)
+  Raffle         Raffle?       @relation(fields: [raffleId], references: [id])
+  raffleId       String?       @db.Uuid
+
+  @@map("raffleEntries")
+}
+
+model CloudItem {
+  id            String       @id @db.Uuid
+  key           String       @db.VarChar(100)
+  name          String       @db.VarChar(100)
+  description   String?
+  applicationId String?      @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+
+  @@map("cloudItems")
+}
+
+model Proposal {
+  id          String     @id @db.Uuid
+  key         String     @db.VarChar(100)
+  name        String     @db.VarChar(100)
+  description String?
+  content     String?
+  metaverseId String     @db.Uuid
+  metaverse   Metaverse? @relation(fields: [metaverseId], references: [id], onUpdate: NoAction)
+  ownerId     String?    @db.Uuid
+  createdById String?    @db.Uuid
+  editedById  String?    @db.Uuid
+  deletedById String?    @db.Uuid
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?  @db.Timestamptz(6)
+  deletedAt   DateTime?  @db.Timestamptz(6)
+  createdBy   Profile?   @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy   Profile?   @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy    Profile?   @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner       Profile?   @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta        Json
+  status      String     @default("draft") @db.VarChar(100)
+
+  @@map("proposals")
+}
+
+model Company {
+  id            String       @id @db.Uuid
+  key           String       @db.VarChar(100)
+  name          String       @db.VarChar(100)
+  description   String?
+  content       String?
+  applicationId String       @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+  people        Person[]
+
+  @@map("companies")
+}
+
+model Person {
+  id            String       @id @db.Uuid
+  key           String       @db.VarChar(100)
+  name          String       @db.VarChar(100)
+  description   String?
+  content       String?
+  applicationId String       @db.Uuid
+  application   Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction)
+  companyId     String       @db.Uuid
+  company       Company?     @relation(fields: [companyId], references: [id], onUpdate: NoAction)
+  ownerId       String?      @db.Uuid
+  createdById   String?      @db.Uuid
+  editedById    String?      @db.Uuid
+  deletedById   String?      @db.Uuid
+  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime?    @db.Timestamptz(6)
+  deletedAt     DateTime?    @db.Timestamptz(6)
+  createdBy     Profile?     @relation("createdBy", fields: [createdById], references: [id], onUpdate: SetNull)
+  deletedBy     Profile?     @relation("deletedBy", fields: [deletedById], references: [id], onUpdate: SetNull)
+  editedBy      Profile?     @relation("editedBy", fields: [editedById], references: [id], onUpdate: SetNull)
+  owner         Profile?     @relation("owner", fields: [ownerId], references: [id], onUpdate: NoAction)
+  meta          Json
+  status        String       @default("draft") @db.VarChar(100)
+
+  @@map("people")
+}

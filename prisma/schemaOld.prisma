@@ -1,0 +1,1483 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../src/generatedOld"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("OLD_DATABASE_URL")
+}
+
+model Account {
+    id                                  Int          @id @default(autoincrement())
+    name                                String?      @db.VarChar(100)
+    key                                 String?      @db.VarChar(100)
+    value                               String?
+    meta                                Json
+    status                              String?      @default("active")
+    applicationId                       Int?
+    createdAt                           DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                           DateTime?    @db.Timestamptz(6)
+    deletedAt                           DateTime?    @db.Timestamptz(6)
+    email                               String?      @unique(map: "accounts_email_unique") @db.VarChar(100)
+    firstName                           String?      @db.VarChar(50)
+    lastName                            String?      @db.VarChar(50)
+    address                             String?      @db.VarChar(150)
+    avatar                              String?      @db.VarChar(100)
+    password                            String?      @db.VarChar(550)
+    applications                        Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "accounts_applicationid_foreign")
+    nodes_nodes_fromAccountIdToaccounts Node[]       @relation("nodes_fromAccountIdToaccounts")
+    nodes_nodes_toAccountIdToaccounts   Node[]       @relation("nodes_toAccountIdToaccounts")
+    profiles                            Profile[]
+
+    @@index([deletedAt], map: "accounts_idx_deleted_at")
+    @@index([key], map: "accounts_idx_key")
+    @@index([name], map: "accounts_idx_name")
+    @@index([status], map: "accounts_idx_status")
+    @@index([createdAt, updatedAt], map: "accounts_mul_timestamp")
+    @@map("accounts")
+}
+
+model Achievement {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "achievements_applicationid_foreign")
+    createdByProfile Profile?     @relation("achievements_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "achievements_createdby_foreign")
+    deletedByProfile Profile?     @relation("achievements_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "achievements_deletedby_foreign")
+    editedByProfile  Profile?     @relation("achievements_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "achievements_editedby_foreign")
+    owner            Profile?     @relation("achievements_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "achievements_ownerid_foreign")
+
+    @@index([deletedAt], map: "achievements_idx_deleted_at")
+    @@index([key], map: "achievements_idx_key")
+    @@index([name], map: "achievements_idx_name")
+    @@index([status], map: "achievements_idx_status")
+    @@index([createdAt, updatedAt], map: "achievements_mul_timestamp")
+    @@map("achievements")
+}
+
+model Application {
+    id              Int              @id @default(autoincrement())
+    name            String?          @db.VarChar(100)
+    key             String?          @db.VarChar(100)
+    value           String?
+    meta            Json
+    status          String?          @default("active")
+    createdAt       DateTime         @default(now()) @db.Timestamptz(6)
+    updatedAt       DateTime?        @db.Timestamptz(6)
+    deletedAt       DateTime?        @db.Timestamptz(6)
+    accounts        Account[]
+    achievements    Achievement[]
+    assets          Asset[]
+    badges          Badge[]
+    battlepasses    BattlePass[]
+    bounties        Bounty[]
+    collections     Collection[]
+    communities     Community[]
+    discussions     Discussion[]
+    events          Event[]
+    exchanges       Exchange[]
+    files           File[]
+    ideas           Idea[]
+    leaderboards    Leaderboard[]
+    licenses        License[]
+    logs            Log[]
+    marketPairs     MarketPair[]
+    markets         Market[]
+    messages        Message[]
+    offers          Offer[]
+    orders          Order[]
+    products        Product[]
+    profiles        Profile[]
+    projects        Project[]
+    ratings         Rating[]
+    realms          Realm[]
+    reviews         Review[]
+    roles           Role[]
+    servers         Server[]
+    suggestions     Suggestion[]
+    tags            Tag[]
+    tokens          Token[]
+    tournaments     Tournament[]
+    tradeIdeas      TradeIdea[]
+    trades          Trade[]
+    transactions    Transaction[]
+    votes           Vote[]
+    paymentRequests PaymentRequest[]
+
+    @@index([deletedAt], map: "applications_idx_deleted_at")
+    @@index([key], map: "applications_idx_key")
+    @@index([name], map: "applications_idx_name")
+    @@index([status], map: "applications_idx_status")
+    @@index([createdAt, updatedAt], map: "applications_mul_timestamp")
+    @@map("applications")
+}
+
+model Asset {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    type             String?      @db.VarChar(100)
+    standard         String?      @db.VarChar(100)
+    licenseId        Int?
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "assets_applicationid_foreign")
+    createdByProfile Profile?     @relation("assets_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "assets_createdby_foreign")
+    deletedByProfile Profile?     @relation("assets_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "assets_deletedby_foreign")
+    editedByProfile  Profile?     @relation("assets_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "assets_editedby_foreign")
+    licenses         License?     @relation(fields: [licenseId], references: [id], onUpdate: NoAction, map: "assets_licenseid_foreign")
+    ownerIdProfile   Profile?     @relation("assets_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "assets_ownerid_foreign")
+
+    @@index([deletedAt], map: "assets_idx_deleted_at")
+    @@index([key], map: "assets_idx_key")
+    @@index([name], map: "assets_idx_name")
+    @@index([status], map: "assets_idx_status")
+    @@index([createdAt, updatedAt], map: "assets_mul_timestamp")
+    @@map("assets")
+}
+
+model Badge {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "badges_applicationid_foreign")
+    createdByProfile Profile?     @relation("badges_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "badges_createdby_foreign")
+    deletedByProfile Profile?     @relation("badges_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "badges_deletedby_foreign")
+    editedByProfile  Profile?     @relation("badges_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "badges_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("badges_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "badges_ownerid_foreign")
+
+    @@index([deletedAt], map: "badges_idx_deleted_at")
+    @@index([key], map: "badges_idx_key")
+    @@index([name], map: "badges_idx_name")
+    @@index([status], map: "badges_idx_status")
+    @@index([createdAt, updatedAt], map: "badges_mul_timestamp")
+    @@map("badges")
+}
+
+model BattlePass {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "battlepasses_applicationid_foreign")
+    createdByProfile Profile?     @relation("battlepasses_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "battlepasses_createdby_foreign")
+    deletedByProfile Profile?     @relation("battlepasses_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "battlepasses_deletedby_foreign")
+    editedByProfile  Profile?     @relation("battlepasses_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "battlepasses_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("battlepasses_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "battlepasses_ownerid_foreign")
+
+    @@index([deletedAt], map: "battlepasses_idx_deleted_at")
+    @@index([key], map: "battlepasses_idx_key")
+    @@index([name], map: "battlepasses_idx_name")
+    @@index([status], map: "battlepasses_idx_status")
+    @@index([createdAt, updatedAt], map: "battlepasses_mul_timestamp")
+    @@map("battlepasses")
+}
+
+model Bounty {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "bounties_applicationid_foreign")
+    createdByProfile Profile?     @relation("bounties_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "bounties_createdby_foreign")
+    deletedByProfile Profile?     @relation("bounties_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "bounties_deletedby_foreign")
+    editedByProfile  Profile?     @relation("bounties_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "bounties_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("bounties_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "bounties_ownerid_foreign")
+
+    @@index([deletedAt], map: "bounties_idx_deleted_at")
+    @@index([key], map: "bounties_idx_key")
+    @@index([name], map: "bounties_idx_name")
+    @@index([status], map: "bounties_idx_status")
+    @@index([createdAt, updatedAt], map: "bounties_mul_timestamp")
+    @@map("bounties")
+}
+
+model Collection {
+    id                                        Int          @id @default(autoincrement())
+    name                                      String?      @db.VarChar(100)
+    key                                       String?      @db.VarChar(100)
+    value                                     String?
+    meta                                      Json
+    status                                    String?      @default("active")
+    applicationId                             Int?
+    ownerId                                   Int?
+    createdBy                                 Int?
+    editedBy                                  Int?
+    deletedBy                                 Int?
+    createdAt                                 DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                                 DateTime?    @db.Timestamptz(6)
+    deletedAt                                 DateTime?    @db.Timestamptz(6)
+    applications                              Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "collections_applicationid_foreign")
+    createdByProfile                          Profile?     @relation("collections_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "collections_createdby_foreign")
+    deletedByProfile                          Profile?     @relation("collections_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "collections_deletedby_foreign")
+    editedByProfile                           Profile?     @relation("collections_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "collections_editedby_foreign")
+    ownerIdProfile                            Profile?     @relation("collections_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "collections_ownerid_foreign")
+    nodes_nodes_fromCollectionIdTocollections Node[]       @relation("nodes_fromCollectionIdTocollections")
+    nodes_nodes_toCollectionIdTocollections   Node[]       @relation("nodes_toCollectionIdTocollections")
+
+    @@index([deletedAt], map: "collections_idx_deleted_at")
+    @@index([key], map: "collections_idx_key")
+    @@index([name], map: "collections_idx_name")
+    @@index([status], map: "collections_idx_status")
+    @@index([createdAt, updatedAt], map: "collections_mul_timestamp")
+    @@map("collections")
+}
+
+model Community {
+    id                                       Int          @id @default(autoincrement())
+    name                                     String?      @db.VarChar(100)
+    key                                      String?      @db.VarChar(100)
+    value                                    String?
+    meta                                     Json
+    status                                   String?      @default("active")
+    applicationId                            Int?
+    ownerId                                  Int?
+    createdBy                                Int?
+    editedBy                                 Int?
+    deletedBy                                Int?
+    createdAt                                DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                                DateTime?    @db.Timestamptz(6)
+    deletedAt                                DateTime?    @db.Timestamptz(6)
+    currentActiveUsers                       Int?
+    dailyActiveUsers                         Int?
+    monthlyActiveUsers                       Int?
+    applications                             Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "communities_applicationid_foreign")
+    createdByProfile                         Profile?     @relation("communities_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "communities_createdby_foreign")
+    deletedByProfile                         Profile?     @relation("communities_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "communities_deletedby_foreign")
+    editedByProfile                          Profile?     @relation("communities_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "communities_editedby_foreign")
+    ownerIdProfile                           Profile?     @relation("communities_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "communities_ownerid_foreign")
+    ideas                                    Idea[]
+    nodes_nodes_fromCommunityIdTocommunities Node[]       @relation("nodes_fromCommunityIdTocommunities")
+    nodes_nodes_toCommunityIdTocommunities   Node[]       @relation("nodes_toCommunityIdTocommunities")
+    products                                 Product[]
+    projects                                 Project[]
+
+    @@index([deletedAt], map: "communities_idx_deleted_at")
+    @@index([key], map: "communities_idx_key")
+    @@index([name], map: "communities_idx_name")
+    @@index([status], map: "communities_idx_status")
+    @@index([createdAt, updatedAt], map: "communities_mul_timestamp")
+    @@map("communities")
+}
+
+model Discussion {
+    id                                        Int          @id @default(autoincrement())
+    name                                      String?      @db.VarChar(100)
+    key                                       String?      @db.VarChar(100)
+    value                                     String?
+    meta                                      Json
+    status                                    String?      @default("active")
+    applicationId                             Int?
+    ownerId                                   Int?
+    createdBy                                 Int?
+    editedBy                                  Int?
+    deletedBy                                 Int?
+    createdAt                                 DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                                 DateTime?    @db.Timestamptz(6)
+    deletedAt                                 DateTime?    @db.Timestamptz(6)
+    content                                   String?
+    parentId                                  Int?
+    rootMessageId                             Int?
+    type                                      String?      @default("discussion")
+    applications                              Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "discussions_applicationid_foreign")
+    createdByProfile                          Profile?     @relation("discussions_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "discussions_createdby_foreign")
+    deletedByProfile                          Profile?     @relation("discussions_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "discussions_deletedby_foreign")
+    editedByProfile                           Profile?     @relation("discussions_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "discussions_editedby_foreign")
+    ownerIdProfile                            Profile?     @relation("discussions_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "discussions_ownerid_foreign")
+    nodes_nodes_fromDiscussionIdTodiscussions Node[]       @relation("nodes_fromDiscussionIdTodiscussions")
+    nodes_nodes_toDiscussionIdTodiscussions   Node[]       @relation("nodes_toDiscussionIdTodiscussions")
+
+    @@index([deletedAt], map: "discussions_idx_deleted_at")
+    @@index([key], map: "discussions_idx_key")
+    @@index([name], map: "discussions_idx_name")
+    @@index([status], map: "discussions_idx_status")
+    @@index([createdAt, updatedAt], map: "discussions_mul_timestamp")
+    @@map("discussions")
+}
+
+model Event {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "events_applicationid_foreign")
+    createdByProfile Profile?     @relation("events_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "events_createdby_foreign")
+    deletedByProfile Profile?     @relation("events_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "events_deletedby_foreign")
+    editedByProfile  Profile?     @relation("events_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "events_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("events_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "events_ownerid_foreign")
+
+    @@index([deletedAt], map: "events_idx_deleted_at")
+    @@index([key], map: "events_idx_key")
+    @@index([name], map: "events_idx_name")
+    @@index([status], map: "events_idx_status")
+    @@index([createdAt, updatedAt], map: "events_mul_timestamp")
+    @@map("events")
+}
+
+model Exchange {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "exchanges_applicationid_foreign")
+    createdByProfile Profile?     @relation("exchanges_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "exchanges_createdby_foreign")
+    deletedByProfile Profile?     @relation("exchanges_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "exchanges_deletedby_foreign")
+    editedByProfile  Profile?     @relation("exchanges_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "exchanges_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("exchanges_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "exchanges_ownerid_foreign")
+
+    @@index([deletedAt], map: "exchanges_idx_deleted_at")
+    @@index([key], map: "exchanges_idx_key")
+    @@index([name], map: "exchanges_idx_name")
+    @@index([status], map: "exchanges_idx_status")
+    @@index([createdAt, updatedAt], map: "exchanges_mul_timestamp")
+    @@map("exchanges")
+}
+
+model File {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    storageType      String?      @db.VarChar(100)
+    accessType       String?      @db.VarChar(100)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "files_applicationid_foreign")
+    createdByProfile Profile?     @relation("files_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "files_createdby_foreign")
+    deletedByProfile Profile?     @relation("files_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "files_deletedby_foreign")
+    editedByProfile  Profile?     @relation("files_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "files_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("files_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "files_ownerid_foreign")
+
+    @@index([deletedAt], map: "files_idx_deleted_at")
+    @@index([key], map: "files_idx_key")
+    @@index([name], map: "files_idx_name")
+    @@index([status], map: "files_idx_status")
+    @@index([createdAt, updatedAt], map: "files_mul_timestamp")
+    @@map("files")
+}
+
+model Idea {
+    id                            Int          @id @default(autoincrement())
+    name                          String?      @db.VarChar(100)
+    key                           String?      @db.VarChar(100)
+    value                         String?
+    meta                          Json
+    status                        String?      @default("active")
+    applicationId                 Int?
+    ownerId                       Int?
+    createdBy                     Int?
+    editedBy                      Int?
+    deletedBy                     Int?
+    createdAt                     DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                     DateTime?    @db.Timestamptz(6)
+    deletedAt                     DateTime?    @db.Timestamptz(6)
+    type                          String?      @db.VarChar(100)
+    communityId                   Int?
+    applications                  Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "ideas_applicationid_foreign")
+    communities                   Community?   @relation(fields: [communityId], references: [id], onUpdate: NoAction, map: "ideas_communityid_foreign")
+    createdByProfile              Profile?     @relation("ideas_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "ideas_createdby_foreign")
+    deletedByProfile              Profile?     @relation("ideas_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "ideas_deletedby_foreign")
+    editedByProfile               Profile?     @relation("ideas_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "ideas_editedby_foreign")
+    ownerIdProfile                Profile?     @relation("ideas_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "ideas_ownerid_foreign")
+    nodes_nodes_fromIdeaIdToideas Node[]       @relation("nodes_fromIdeaIdToideas")
+    nodes_nodes_toIdeaIdToideas   Node[]       @relation("nodes_toIdeaIdToideas")
+
+    @@index([deletedAt], map: "ideas_idx_deleted_at")
+    @@index([key], map: "ideas_idx_key")
+    @@index([name], map: "ideas_idx_name")
+    @@index([status], map: "ideas_idx_status")
+    @@index([createdAt, updatedAt], map: "ideas_mul_timestamp")
+    @@map("ideas")
+}
+
+model knex_migrations {
+    id             Int       @id @default(autoincrement())
+    name           String?   @db.VarChar(255)
+    batch          Int?
+    migration_time DateTime? @db.Timestamptz(6)
+}
+
+model knex_migrations_lock {
+    index     Int  @id @default(autoincrement())
+    is_locked Int?
+}
+
+model Leaderboard {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    productId        Int?
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "leaderboards_applicationid_foreign")
+    createdByProfile Profile?     @relation("leaderboards_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "leaderboards_createdby_foreign")
+    deletedByProfile Profile?     @relation("leaderboards_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "leaderboards_deletedby_foreign")
+    editedByProfile  Profile?     @relation("leaderboards_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "leaderboards_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("leaderboards_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "leaderboards_ownerid_foreign")
+    products         Product?     @relation(fields: [productId], references: [id], onUpdate: NoAction, map: "leaderboards_productid_foreign")
+
+    @@index([deletedAt], map: "leaderboards_idx_deleted_at")
+    @@index([key], map: "leaderboards_idx_key")
+    @@index([name], map: "leaderboards_idx_name")
+    @@index([status], map: "leaderboards_idx_status")
+    @@index([createdAt, updatedAt], map: "leaderboards_mul_timestamp")
+    @@map("leaderboards")
+}
+
+model License {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    assets           Asset[]
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "licenses_applicationid_foreign")
+    createdByProfile Profile?     @relation("licenses_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "licenses_createdby_foreign")
+    deletedByProfile Profile?     @relation("licenses_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "licenses_deletedby_foreign")
+    editedByProfile  Profile?     @relation("licenses_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "licenses_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("licenses_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "licenses_ownerid_foreign")
+
+    @@index([deletedAt], map: "licenses_idx_deleted_at")
+    @@index([key], map: "licenses_idx_key")
+    @@index([name], map: "licenses_idx_name")
+    @@index([status], map: "licenses_idx_status")
+    @@index([createdAt, updatedAt], map: "licenses_mul_timestamp")
+    @@map("licenses")
+}
+
+model Log {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "logs_applicationid_foreign")
+    createdByProfile Profile?     @relation("logs_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "logs_createdby_foreign")
+    deletedByProfile Profile?     @relation("logs_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "logs_deletedby_foreign")
+    editedByProfile  Profile?     @relation("logs_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "logs_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("logs_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "logs_ownerid_foreign")
+
+    @@index([deletedAt], map: "logs_idx_deleted_at")
+    @@index([key], map: "logs_idx_key")
+    @@index([name], map: "logs_idx_name")
+    @@index([status], map: "logs_idx_status")
+    @@index([createdAt, updatedAt], map: "logs_mul_timestamp")
+    @@map("logs")
+}
+
+model MarketPair {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "marketpairs_applicationid_foreign")
+    createdByProfile Profile?     @relation("marketPairs_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "marketpairs_createdby_foreign")
+    deletedByProfile Profile?     @relation("marketPairs_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "marketpairs_deletedby_foreign")
+    editedByProfile  Profile?     @relation("marketPairs_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "marketpairs_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("marketPairs_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "marketpairs_ownerid_foreign")
+
+    @@index([deletedAt], map: "marketPairs_idx_deleted_at")
+    @@index([key], map: "marketPairs_idx_key")
+    @@index([name], map: "marketPairs_idx_name")
+    @@index([status], map: "marketPairs_idx_status")
+    @@index([createdAt, updatedAt], map: "marketPairs_mul_timestamp")
+    @@map("marketPairs")
+}
+
+model Market {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "markets_applicationid_foreign")
+    createdByProfile Profile?     @relation("markets_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "markets_createdby_foreign")
+    deletedByProfile Profile?     @relation("markets_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "markets_deletedby_foreign")
+    editedByProfile  Profile?     @relation("markets_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "markets_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("markets_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "markets_ownerid_foreign")
+
+    @@index([deletedAt], map: "markets_idx_deleted_at")
+    @@index([key], map: "markets_idx_key")
+    @@index([name], map: "markets_idx_name")
+    @@index([status], map: "markets_idx_status")
+    @@index([createdAt, updatedAt], map: "markets_mul_timestamp")
+    @@map("markets")
+}
+
+model Message {
+    id                                          Int          @id @default(autoincrement())
+    name                                        String?      @db.VarChar(100)
+    key                                         String?      @db.VarChar(100)
+    value                                       String?
+    meta                                        Json
+    status                                      String?      @default("active")
+    applicationId                               Int?
+    ownerId                                     Int?
+    createdBy                                   Int?
+    editedBy                                    Int?
+    deletedBy                                   Int?
+    createdAt                                   DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                                   DateTime?    @db.Timestamptz(6)
+    deletedAt                                   DateTime?    @db.Timestamptz(6)
+    type                                        String?      @db.VarChar(100)
+    replyToId                                   Int?
+    parentId                                    Int?
+    applications                                Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "messages_applicationid_foreign")
+    createdByProfile                            Profile?     @relation("messages_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "messages_createdby_foreign")
+    deletedByProfile                            Profile?     @relation("messages_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "messages_deletedby_foreign")
+    editedByProfile                             Profile?     @relation("messages_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "messages_editedby_foreign")
+    ownerIdProfile                              Profile?     @relation("messages_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "messages_ownerid_foreign")
+    messages_messages_parentIdTomessages        Message?     @relation("messages_parentIdTomessages", fields: [parentId], references: [id], onUpdate: NoAction, map: "messages_parentid_foreign")
+    other_messages_messages_parentIdTomessages  Message[]    @relation("messages_parentIdTomessages")
+    messages_messages_replyToIdTomessages       Message?     @relation("messages_replyToIdTomessages", fields: [replyToId], references: [id], onUpdate: NoAction, map: "messages_replytoid_foreign")
+    other_messages_messages_replyToIdTomessages Message[]    @relation("messages_replyToIdTomessages")
+    nodes_nodes_fromMessageIdTomessages         Node[]       @relation("nodes_fromMessageIdTomessages")
+    nodes_nodes_toMessageIdTomessages           Node[]       @relation("nodes_toMessageIdTomessages")
+
+    @@index([deletedAt], map: "messages_idx_deleted_at")
+    @@index([key], map: "messages_idx_key")
+    @@index([name], map: "messages_idx_name")
+    @@index([status], map: "messages_idx_status")
+    @@index([createdAt, updatedAt], map: "messages_mul_timestamp")
+    @@map("messages")
+}
+
+model Node {
+    id                                              Int         @id @default(autoincrement())
+    relationKey                                     String?     @db.VarChar(100)
+    relationType                                    String?     @db.VarChar(100)
+    meta                                            Json?
+    status                                          String?     @default("active")
+    fromAccountId                                   Int?
+    toAccountId                                     Int?
+    fromProfileId                                   Int?
+    toProfileId                                     Int?
+    fromIdeaId                                      Int?
+    toIdeaId                                        Int?
+    fromProjectId                                   Int?
+    toProjectId                                     Int?
+    fromProductId                                   Int?
+    toProductId                                     Int?
+    fromMessageId                                   Int?
+    toMessageId                                     Int?
+    fromTagId                                       Int?
+    toTagId                                         Int?
+    fromRealmId                                     Int?
+    toRealmId                                       Int?
+    fromCollectionId                                Int?
+    toCollectionId                                  Int?
+    fromCommunityId                                 Int?
+    toCommunityId                                   Int?
+    fromDiscussionId                                Int?
+    toDiscussionId                                  Int?
+    fromVoteId                                      Int?
+    toVoteId                                        Int?
+    accounts_nodes_fromAccountIdToaccounts          Account?    @relation("nodes_fromAccountIdToaccounts", fields: [fromAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromaccountid_foreign")
+    collections_nodes_fromCollectionIdTocollections Collection? @relation("nodes_fromCollectionIdTocollections", fields: [fromCollectionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromcollectionid_foreign")
+    communities_nodes_fromCommunityIdTocommunities  Community?  @relation("nodes_fromCommunityIdTocommunities", fields: [fromCommunityId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromcommunityid_foreign")
+    discussions_nodes_fromDiscussionIdTodiscussions Discussion? @relation("nodes_fromDiscussionIdTodiscussions", fields: [fromDiscussionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromdiscussionid_foreign")
+    ideas_nodes_fromIdeaIdToideas                   Idea?       @relation("nodes_fromIdeaIdToideas", fields: [fromIdeaId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromideaid_foreign")
+    messages_nodes_fromMessageIdTomessages          Message?    @relation("nodes_fromMessageIdTomessages", fields: [fromMessageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_frommessageid_foreign")
+    products_nodes_fromProductIdToproducts          Product?    @relation("nodes_fromProductIdToproducts", fields: [fromProductId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromproductid_foreign")
+    profiles_nodes_fromProfileIdToprofiles          Profile?    @relation("nodes_fromProfileIdToprofiles", fields: [fromProfileId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromprofileid_foreign")
+    projects_nodes_fromProjectIdToprojects          Project?    @relation("nodes_fromProjectIdToprojects", fields: [fromProjectId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromprojectid_foreign")
+    realms_nodes_fromRealmIdTorealms                Realm?      @relation("nodes_fromRealmIdTorealms", fields: [fromRealmId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromrealmid_foreign")
+    tags_nodes_fromTagIdTotags                      Tag?        @relation("nodes_fromTagIdTotags", fields: [fromTagId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromtagid_foreign")
+    votes_nodes_fromVoteIdTovotes                   Vote?       @relation("nodes_fromVoteIdTovotes", fields: [fromVoteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_fromvoteid_foreign")
+    accounts_nodes_toAccountIdToaccounts            Account?    @relation("nodes_toAccountIdToaccounts", fields: [toAccountId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_toaccountid_foreign")
+    collections_nodes_toCollectionIdTocollections   Collection? @relation("nodes_toCollectionIdTocollections", fields: [toCollectionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_tocollectionid_foreign")
+    communities_nodes_toCommunityIdTocommunities    Community?  @relation("nodes_toCommunityIdTocommunities", fields: [toCommunityId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_tocommunityid_foreign")
+    discussions_nodes_toDiscussionIdTodiscussions   Discussion? @relation("nodes_toDiscussionIdTodiscussions", fields: [toDiscussionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_todiscussionid_foreign")
+    ideas_nodes_toIdeaIdToideas                     Idea?       @relation("nodes_toIdeaIdToideas", fields: [toIdeaId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_toideaid_foreign")
+    messages_nodes_toMessageIdTomessages            Message?    @relation("nodes_toMessageIdTomessages", fields: [toMessageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_tomessageid_foreign")
+    products_nodes_toProductIdToproducts            Product?    @relation("nodes_toProductIdToproducts", fields: [toProductId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_toproductid_foreign")
+    profiles_nodes_toProfileIdToprofiles            Profile?    @relation("nodes_toProfileIdToprofiles", fields: [toProfileId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_toprofileid_foreign")
+    projects_nodes_toProjectIdToprojects            Project?    @relation("nodes_toProjectIdToprojects", fields: [toProjectId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_toprojectid_foreign")
+    realms_nodes_toRealmIdTorealms                  Realm?      @relation("nodes_toRealmIdTorealms", fields: [toRealmId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_torealmid_foreign")
+    tags_nodes_toTagIdTotags                        Tag?        @relation("nodes_toTagIdTotags", fields: [toTagId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_totagid_foreign")
+    votes_nodes_toVoteIdTovotes                     Vote?       @relation("nodes_toVoteIdTovotes", fields: [toVoteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "nodes_tovoteid_foreign")
+
+    @@index([status], map: "nodes_idx_status")
+    @@map("nodes")
+}
+
+model Offer {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "offers_applicationid_foreign")
+    createdByProfile Profile?     @relation("offers_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "offers_createdby_foreign")
+    deletedByProfile Profile?     @relation("offers_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "offers_deletedby_foreign")
+    editedByProfile  Profile?     @relation("offers_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "offers_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("offers_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "offers_ownerid_foreign")
+
+    @@index([deletedAt], map: "offers_idx_deleted_at")
+    @@index([key], map: "offers_idx_key")
+    @@index([name], map: "offers_idx_name")
+    @@index([status], map: "offers_idx_status")
+    @@index([createdAt, updatedAt], map: "offers_mul_timestamp")
+    @@map("offers")
+}
+
+model Order {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "orders_applicationid_foreign")
+    createdByProfile Profile?     @relation("orders_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "orders_createdby_foreign")
+    deletedByProfile Profile?     @relation("orders_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "orders_deletedby_foreign")
+    editedByProfile  Profile?     @relation("orders_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "orders_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("orders_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "orders_ownerid_foreign")
+
+    @@index([deletedAt], map: "orders_idx_deleted_at")
+    @@index([key], map: "orders_idx_key")
+    @@index([name], map: "orders_idx_name")
+    @@index([status], map: "orders_idx_status")
+    @@index([createdAt, updatedAt], map: "orders_mul_timestamp")
+    @@map("orders")
+}
+
+model Product {
+    id                                  Int           @id @default(autoincrement())
+    name                                String?       @db.VarChar(100)
+    key                                 String?       @db.VarChar(100)
+    value                               String?
+    meta                                Json
+    status                              String?       @default("active")
+    applicationId                       Int?
+    ownerId                             Int?
+    createdBy                           Int?
+    editedBy                            Int?
+    deletedBy                           Int?
+    createdAt                           DateTime      @default(now()) @db.Timestamptz(6)
+    updatedAt                           DateTime?     @db.Timestamptz(6)
+    deletedAt                           DateTime?     @db.Timestamptz(6)
+    communityId                         Int?
+    type                                String?       @default("game")
+    releaseDate                         DateTime?     @db.Timestamptz(6)
+    tags                                String[]      @default([])
+    leaderboards                        Leaderboard[]
+    nodes_nodes_fromProductIdToproducts Node[]        @relation("nodes_fromProductIdToproducts")
+    nodes_nodes_toProductIdToproducts   Node[]        @relation("nodes_toProductIdToproducts")
+    applications                        Application?  @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "products_applicationid_foreign")
+    communities                         Community?    @relation(fields: [communityId], references: [id], onUpdate: NoAction, map: "products_communityid_foreign")
+    createdByProfile                    Profile?      @relation("products_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "products_createdby_foreign")
+    deletedByProfile                    Profile?      @relation("products_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "products_deletedby_foreign")
+    editedByProfile                     Profile?      @relation("products_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "products_editedby_foreign")
+    ownerIdProfile                      Profile?      @relation("products_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "products_ownerid_foreign")
+    projects                            Project[]
+
+    @@index([deletedAt], map: "products_idx_deleted_at")
+    @@index([key], map: "products_idx_key")
+    @@index([name], map: "products_idx_name")
+    @@index([status], map: "products_idx_status")
+    @@index([createdAt, updatedAt], map: "products_mul_timestamp")
+    @@index([tags], map: "tags_index", type: Gin)
+    @@map("products")
+}
+
+model Profile {
+    id                                                  Int              @id @default(autoincrement())
+    name                                                String?          @db.VarChar(100)
+    key                                                 String?          @db.VarChar(100)
+    value                                               String?
+    meta                                                Json
+    status                                              String?          @default("active")
+    applicationId                                       Int?
+    createdBy                                           Int?
+    editedBy                                            Int?
+    deletedBy                                           Int?
+    createdAt                                           DateTime         @default(now()) @db.Timestamptz(6)
+    updatedAt                                           DateTime?        @db.Timestamptz(6)
+    deletedAt                                           DateTime?        @db.Timestamptz(6)
+    address                                             String?          @db.VarChar(100)
+    avatar                                              String?          @db.VarChar(100)
+    role                                                String?          @default("user")
+    accountId                                           Int?
+    privateKey                                          String?          @db.VarChar(300)
+    signature                                           String?          @db.VarChar(200)
+    chain                                               String?          @db.VarChar(30)
+    achievements_achievements_createdByToprofiles       Achievement[]    @relation("achievements_createdByToprofiles")
+    achievements_achievements_deletedByToprofiles       Achievement[]    @relation("achievements_deletedByToprofiles")
+    achievements_achievements_editedByToprofiles        Achievement[]    @relation("achievements_editedByToprofiles")
+    achievements_achievements_ownerIdToprofiles         Achievement[]    @relation("achievements_ownerIdToprofiles")
+    assets_assets_createdByToprofiles                   Asset[]          @relation("assets_createdByToprofiles")
+    assets_assets_deletedByToprofiles                   Asset[]          @relation("assets_deletedByToprofiles")
+    assets_assets_editedByToprofiles                    Asset[]          @relation("assets_editedByToprofiles")
+    assets_assets_ownerIdToprofiles                     Asset[]          @relation("assets_ownerIdToprofiles")
+    badges_badges_createdByToprofiles                   Badge[]          @relation("badges_createdByToprofiles")
+    badges_badges_deletedByToprofiles                   Badge[]          @relation("badges_deletedByToprofiles")
+    badges_badges_editedByToprofiles                    Badge[]          @relation("badges_editedByToprofiles")
+    badges_badges_ownerIdToprofiles                     Badge[]          @relation("badges_ownerIdToprofiles")
+    battlepasses_battlepasses_createdByToprofiles       BattlePass[]     @relation("battlepasses_createdByToprofiles")
+    battlepasses_battlepasses_deletedByToprofiles       BattlePass[]     @relation("battlepasses_deletedByToprofiles")
+    battlepasses_battlepasses_editedByToprofiles        BattlePass[]     @relation("battlepasses_editedByToprofiles")
+    battlepasses_battlepasses_ownerIdToprofiles         BattlePass[]     @relation("battlepasses_ownerIdToprofiles")
+    bounties_bounties_createdByToprofiles               Bounty[]         @relation("bounties_createdByToprofiles")
+    bounties_bounties_deletedByToprofiles               Bounty[]         @relation("bounties_deletedByToprofiles")
+    bounties_bounties_editedByToprofiles                Bounty[]         @relation("bounties_editedByToprofiles")
+    bounties_bounties_ownerIdToprofiles                 Bounty[]         @relation("bounties_ownerIdToprofiles")
+    collections_collections_createdByToprofiles         Collection[]     @relation("collections_createdByToprofiles")
+    collections_collections_deletedByToprofiles         Collection[]     @relation("collections_deletedByToprofiles")
+    collections_collections_editedByToprofiles          Collection[]     @relation("collections_editedByToprofiles")
+    collections_collections_ownerIdToprofiles           Collection[]     @relation("collections_ownerIdToprofiles")
+    communities_communities_createdByToprofiles         Community[]      @relation("communities_createdByToprofiles")
+    communities_communities_deletedByToprofiles         Community[]      @relation("communities_deletedByToprofiles")
+    communities_communities_editedByToprofiles          Community[]      @relation("communities_editedByToprofiles")
+    communities_communities_ownerIdToprofiles           Community[]      @relation("communities_ownerIdToprofiles")
+    discussions_discussions_createdByToprofiles         Discussion[]     @relation("discussions_createdByToprofiles")
+    discussions_discussions_deletedByToprofiles         Discussion[]     @relation("discussions_deletedByToprofiles")
+    discussions_discussions_editedByToprofiles          Discussion[]     @relation("discussions_editedByToprofiles")
+    discussions_discussions_ownerIdToprofiles           Discussion[]     @relation("discussions_ownerIdToprofiles")
+    events_events_createdByToprofiles                   Event[]          @relation("events_createdByToprofiles")
+    events_events_deletedByToprofiles                   Event[]          @relation("events_deletedByToprofiles")
+    events_events_editedByToprofiles                    Event[]          @relation("events_editedByToprofiles")
+    events_events_ownerIdToprofiles                     Event[]          @relation("events_ownerIdToprofiles")
+    exchanges_exchanges_createdByToprofiles             Exchange[]       @relation("exchanges_createdByToprofiles")
+    exchanges_exchanges_deletedByToprofiles             Exchange[]       @relation("exchanges_deletedByToprofiles")
+    exchanges_exchanges_editedByToprofiles              Exchange[]       @relation("exchanges_editedByToprofiles")
+    exchanges_exchanges_ownerIdToprofiles               Exchange[]       @relation("exchanges_ownerIdToprofiles")
+    files_files_createdByToprofiles                     File[]           @relation("files_createdByToprofiles")
+    files_files_deletedByToprofiles                     File[]           @relation("files_deletedByToprofiles")
+    files_files_editedByToprofiles                      File[]           @relation("files_editedByToprofiles")
+    files_files_ownerIdToprofiles                       File[]           @relation("files_ownerIdToprofiles")
+    ideas_ideas_createdByToprofiles                     Idea[]           @relation("ideas_createdByToprofiles")
+    ideas_ideas_deletedByToprofiles                     Idea[]           @relation("ideas_deletedByToprofiles")
+    ideas_ideas_editedByToprofiles                      Idea[]           @relation("ideas_editedByToprofiles")
+    ideas_ideas_ownerIdToprofiles                       Idea[]           @relation("ideas_ownerIdToprofiles")
+    leaderboards_leaderboards_createdByToprofiles       Leaderboard[]    @relation("leaderboards_createdByToprofiles")
+    leaderboards_leaderboards_deletedByToprofiles       Leaderboard[]    @relation("leaderboards_deletedByToprofiles")
+    leaderboards_leaderboards_editedByToprofiles        Leaderboard[]    @relation("leaderboards_editedByToprofiles")
+    leaderboards_leaderboards_ownerIdToprofiles         Leaderboard[]    @relation("leaderboards_ownerIdToprofiles")
+    licenses_licenses_createdByToprofiles               License[]        @relation("licenses_createdByToprofiles")
+    licenses_licenses_deletedByToprofiles               License[]        @relation("licenses_deletedByToprofiles")
+    licenses_licenses_editedByToprofiles                License[]        @relation("licenses_editedByToprofiles")
+    licenses_licenses_ownerIdToprofiles                 License[]        @relation("licenses_ownerIdToprofiles")
+    logs_logs_createdByToprofiles                       Log[]            @relation("logs_createdByToprofiles")
+    logs_logs_deletedByToprofiles                       Log[]            @relation("logs_deletedByToprofiles")
+    logs_logs_editedByToprofiles                        Log[]            @relation("logs_editedByToprofiles")
+    logs_logs_ownerIdToprofiles                         Log[]            @relation("logs_ownerIdToprofiles")
+    marketPairs_marketPairs_createdByToprofiles         MarketPair[]     @relation("marketPairs_createdByToprofiles")
+    marketPairs_marketPairs_deletedByToprofiles         MarketPair[]     @relation("marketPairs_deletedByToprofiles")
+    marketPairs_marketPairs_editedByToprofiles          MarketPair[]     @relation("marketPairs_editedByToprofiles")
+    marketPairs_marketPairs_ownerIdToprofiles           MarketPair[]     @relation("marketPairs_ownerIdToprofiles")
+    markets_markets_createdByToprofiles                 Market[]         @relation("markets_createdByToprofiles")
+    markets_markets_deletedByToprofiles                 Market[]         @relation("markets_deletedByToprofiles")
+    markets_markets_editedByToprofiles                  Market[]         @relation("markets_editedByToprofiles")
+    markets_markets_ownerIdToprofiles                   Market[]         @relation("markets_ownerIdToprofiles")
+    messages_messages_createdByToprofiles               Message[]        @relation("messages_createdByToprofiles")
+    messages_messages_deletedByToprofiles               Message[]        @relation("messages_deletedByToprofiles")
+    messages_messages_editedByToprofiles                Message[]        @relation("messages_editedByToprofiles")
+    messages_messages_ownerIdToprofiles                 Message[]        @relation("messages_ownerIdToprofiles")
+    nodes_nodes_fromProfileIdToprofiles                 Node[]           @relation("nodes_fromProfileIdToprofiles")
+    nodes_nodes_toProfileIdToprofiles                   Node[]           @relation("nodes_toProfileIdToprofiles")
+    offers_offers_createdByToprofiles                   Offer[]          @relation("offers_createdByToprofiles")
+    offers_offers_deletedByToprofiles                   Offer[]          @relation("offers_deletedByToprofiles")
+    offers_offers_editedByToprofiles                    Offer[]          @relation("offers_editedByToprofiles")
+    offers_offers_ownerIdToprofiles                     Offer[]          @relation("offers_ownerIdToprofiles")
+    orders_orders_createdByToprofiles                   Order[]          @relation("orders_createdByToprofiles")
+    orders_orders_deletedByToprofiles                   Order[]          @relation("orders_deletedByToprofiles")
+    orders_orders_editedByToprofiles                    Order[]          @relation("orders_editedByToprofiles")
+    orders_orders_ownerIdToprofiles                     Order[]          @relation("orders_ownerIdToprofiles")
+    products_products_createdByToprofiles               Product[]        @relation("products_createdByToprofiles")
+    products_products_deletedByToprofiles               Product[]        @relation("products_deletedByToprofiles")
+    products_products_editedByToprofiles                Product[]        @relation("products_editedByToprofiles")
+    products_products_ownerIdToprofiles                 Product[]        @relation("products_ownerIdToprofiles")
+    accounts                                            Account?         @relation(fields: [accountId], references: [id], onUpdate: NoAction, map: "profiles_accountid_foreign")
+    applications                                        Application?     @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "profiles_applicationid_foreign")
+    profiles_profiles_createdByToprofiles               Profile?         @relation("profiles_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "profiles_createdby_foreign")
+    other_profiles_profiles_createdByToprofiles         Profile[]        @relation("profiles_createdByToprofiles")
+    profiles_profiles_deletedByToprofiles               Profile?         @relation("profiles_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "profiles_deletedby_foreign")
+    other_profiles_profiles_deletedByToprofiles         Profile[]        @relation("profiles_deletedByToprofiles")
+    profiles_profiles_editedByToprofiles                Profile?         @relation("profiles_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "profiles_editedby_foreign")
+    other_profiles_profiles_editedByToprofiles          Profile[]        @relation("profiles_editedByToprofiles")
+    projects_projects_createdByToprofiles               Project[]        @relation("projects_createdByToprofiles")
+    projects_projects_deletedByToprofiles               Project[]        @relation("projects_deletedByToprofiles")
+    projects_projects_editedByToprofiles                Project[]        @relation("projects_editedByToprofiles")
+    projects_projects_ownerIdToprofiles                 Project[]        @relation("projects_ownerIdToprofiles")
+    ratings_ratings_createdByToprofiles                 Rating[]         @relation("ratings_createdByToprofiles")
+    ratings_ratings_deletedByToprofiles                 Rating[]         @relation("ratings_deletedByToprofiles")
+    ratings_ratings_editedByToprofiles                  Rating[]         @relation("ratings_editedByToprofiles")
+    ratings_ratings_ownerIdToprofiles                   Rating[]         @relation("ratings_ownerIdToprofiles")
+    realms_realms_createdByToprofiles                   Realm[]          @relation("realms_createdByToprofiles")
+    realms_realms_deletedByToprofiles                   Realm[]          @relation("realms_deletedByToprofiles")
+    realms_realms_editedByToprofiles                    Realm[]          @relation("realms_editedByToprofiles")
+    realms_realms_ownerIdToprofiles                     Realm[]          @relation("realms_ownerIdToprofiles")
+    reviews_reviews_createdByToprofiles                 Review[]         @relation("reviews_createdByToprofiles")
+    reviews_reviews_deletedByToprofiles                 Review[]         @relation("reviews_deletedByToprofiles")
+    reviews_reviews_editedByToprofiles                  Review[]         @relation("reviews_editedByToprofiles")
+    reviews_reviews_ownerIdToprofiles                   Review[]         @relation("reviews_ownerIdToprofiles")
+    roles_roles_createdByToprofiles                     Role[]           @relation("roles_createdByToprofiles")
+    roles_roles_deletedByToprofiles                     Role[]           @relation("roles_deletedByToprofiles")
+    roles_roles_editedByToprofiles                      Role[]           @relation("roles_editedByToprofiles")
+    roles_roles_ownerIdToprofiles                       Role[]           @relation("roles_ownerIdToprofiles")
+    servers_servers_createdByToprofiles                 Server[]         @relation("servers_createdByToprofiles")
+    servers_servers_deletedByToprofiles                 Server[]         @relation("servers_deletedByToprofiles")
+    servers_servers_editedByToprofiles                  Server[]         @relation("servers_editedByToprofiles")
+    servers_servers_ownerIdToprofiles                   Server[]         @relation("servers_ownerIdToprofiles")
+    suggestions_suggestions_createdByToprofiles         Suggestion[]     @relation("suggestions_createdByToprofiles")
+    suggestions_suggestions_deletedByToprofiles         Suggestion[]     @relation("suggestions_deletedByToprofiles")
+    suggestions_suggestions_editedByToprofiles          Suggestion[]     @relation("suggestions_editedByToprofiles")
+    suggestions_suggestions_ownerIdToprofiles           Suggestion[]     @relation("suggestions_ownerIdToprofiles")
+    tags_tags_createdByToprofiles                       Tag[]            @relation("tags_createdByToprofiles")
+    tags_tags_deletedByToprofiles                       Tag[]            @relation("tags_deletedByToprofiles")
+    tags_tags_editedByToprofiles                        Tag[]            @relation("tags_editedByToprofiles")
+    tags_tags_ownerIdToprofiles                         Tag[]            @relation("tags_ownerIdToprofiles")
+    tokens_tokens_createdByToprofiles                   Token[]          @relation("tokens_createdByToprofiles")
+    tokens_tokens_deletedByToprofiles                   Token[]          @relation("tokens_deletedByToprofiles")
+    tokens_tokens_editedByToprofiles                    Token[]          @relation("tokens_editedByToprofiles")
+    tokens_tokens_ownerIdToprofiles                     Token[]          @relation("tokens_ownerIdToprofiles")
+    tournaments_tournaments_createdByToprofiles         Tournament[]     @relation("tournaments_createdByToprofiles")
+    tournaments_tournaments_deletedByToprofiles         Tournament[]     @relation("tournaments_deletedByToprofiles")
+    tournaments_tournaments_editedByToprofiles          Tournament[]     @relation("tournaments_editedByToprofiles")
+    tournaments_tournaments_ownerIdToprofiles           Tournament[]     @relation("tournaments_ownerIdToprofiles")
+    tradeIdeas_tradeIdeas_createdByToprofiles           TradeIdea[]      @relation("tradeIdeas_createdByToprofiles")
+    tradeIdeas_tradeIdeas_deletedByToprofiles           TradeIdea[]      @relation("tradeIdeas_deletedByToprofiles")
+    tradeIdeas_tradeIdeas_editedByToprofiles            TradeIdea[]      @relation("tradeIdeas_editedByToprofiles")
+    tradeIdeas_tradeIdeas_ownerIdToprofiles             TradeIdea[]      @relation("tradeIdeas_ownerIdToprofiles")
+    trades_trades_createdByToprofiles                   Trade[]          @relation("trades_createdByToprofiles")
+    trades_trades_deletedByToprofiles                   Trade[]          @relation("trades_deletedByToprofiles")
+    trades_trades_editedByToprofiles                    Trade[]          @relation("trades_editedByToprofiles")
+    trades_trades_ownerIdToprofiles                     Trade[]          @relation("trades_ownerIdToprofiles")
+    transactions_transactions_createdByToprofiles       Transaction[]    @relation("transactions_createdByToprofiles")
+    transactions_transactions_deletedByToprofiles       Transaction[]    @relation("transactions_deletedByToprofiles")
+    transactions_transactions_editedByToprofiles        Transaction[]    @relation("transactions_editedByToprofiles")
+    transactions_transactions_ownerIdToprofiles         Transaction[]    @relation("transactions_ownerIdToprofiles")
+    votes_votes_createdByToprofiles                     Vote[]           @relation("votes_createdByToprofiles")
+    votes_votes_deletedByToprofiles                     Vote[]           @relation("votes_deletedByToprofiles")
+    votes_votes_editedByToprofiles                      Vote[]           @relation("votes_editedByToprofiles")
+    votes_votes_ownerIdToprofiles                       Vote[]           @relation("votes_ownerIdToprofiles")
+    paymentRequests_paymentRequests_createdByToprofiles PaymentRequest[] @relation("paymentRequests_createdByToprofiles")
+    paymentRequests_paymentRequests_deletedByToprofiles PaymentRequest[] @relation("paymentRequests_deletedByToprofiles")
+    paymentRequests_paymentRequests_editedByToprofiles  PaymentRequest[] @relation("paymentRequests_editedByToprofiles")
+
+    @@index([deletedAt], map: "profiles_idx_deleted_at")
+    @@index([key], map: "profiles_idx_key")
+    @@index([name], map: "profiles_idx_name")
+    @@index([status], map: "profiles_idx_status")
+    @@index([createdAt, updatedAt], map: "profiles_mul_timestamp")
+    @@map("profiles")
+}
+
+model Project {
+    id                                  Int          @id @default(autoincrement())
+    name                                String?      @db.VarChar(100)
+    key                                 String?      @db.VarChar(100)
+    value                               String?
+    meta                                Json
+    status                              String?      @default("active")
+    applicationId                       Int?
+    ownerId                             Int?
+    createdBy                           Int?
+    editedBy                            Int?
+    deletedBy                           Int?
+    createdAt                           DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                           DateTime?    @db.Timestamptz(6)
+    deletedAt                           DateTime?    @db.Timestamptz(6)
+    contractStatus                      String?      @default("Draft")
+    parentId                            Int?
+    realmId                             Int?
+    communityId                         Int?
+    productId                           Int?
+    ratingId                            Int?
+    nodes_nodes_fromProjectIdToprojects Node[]       @relation("nodes_fromProjectIdToprojects")
+    nodes_nodes_toProjectIdToprojects   Node[]       @relation("nodes_toProjectIdToprojects")
+    applications                        Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "projects_applicationid_foreign")
+    communities                         Community?   @relation(fields: [communityId], references: [id], onUpdate: NoAction, map: "projects_communityid_foreign")
+    createdByProfile                    Profile?     @relation("projects_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "projects_createdby_foreign")
+    deletedByProfile                    Profile?     @relation("projects_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "projects_deletedby_foreign")
+    editedByProfile                     Profile?     @relation("projects_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "projects_editedby_foreign")
+    ownerIdProfile                      Profile?     @relation("projects_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "projects_ownerid_foreign")
+    projects                            Project?     @relation("projectsToprojects", fields: [parentId], references: [id], onUpdate: NoAction, map: "projects_parentid_foreign")
+    other_projects                      Project[]    @relation("projectsToprojects")
+    products                            Product?     @relation(fields: [productId], references: [id], onUpdate: NoAction, map: "projects_productid_foreign")
+    ratings                             Rating?      @relation(fields: [ratingId], references: [id], onUpdate: NoAction, map: "projects_ratingid_foreign")
+    realms                              Realm?       @relation(fields: [realmId], references: [id], onUpdate: NoAction, map: "projects_realmid_foreign")
+
+    @@index([deletedAt], map: "projects_idx_deleted_at")
+    @@index([key], map: "projects_idx_key")
+    @@index([name], map: "projects_idx_name")
+    @@index([status], map: "projects_idx_status")
+    @@index([createdAt, updatedAt], map: "projects_mul_timestamp")
+    @@map("projects")
+}
+
+model Rating {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    projects         Project[]
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "ratings_applicationid_foreign")
+    createdByProfile Profile?     @relation("ratings_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "ratings_createdby_foreign")
+    deletedByProfile Profile?     @relation("ratings_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "ratings_deletedby_foreign")
+    editedByProfile  Profile?     @relation("ratings_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "ratings_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("ratings_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "ratings_ownerid_foreign")
+    votes            Vote[]
+
+    @@index([deletedAt], map: "ratings_idx_deleted_at")
+    @@index([key], map: "ratings_idx_key")
+    @@index([name], map: "ratings_idx_name")
+    @@index([status], map: "ratings_idx_status")
+    @@index([createdAt, updatedAt], map: "ratings_mul_timestamp")
+    @@map("ratings")
+}
+
+model Realm {
+    id                              Int          @id @default(autoincrement())
+    name                            String?      @db.VarChar(100)
+    key                             String?      @db.VarChar(100)
+    value                           String?
+    meta                            Json
+    status                          String?      @default("active")
+    applicationId                   Int?
+    ownerId                         Int?
+    createdBy                       Int?
+    editedBy                        Int?
+    deletedBy                       Int?
+    createdAt                       DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                       DateTime?    @db.Timestamptz(6)
+    deletedAt                       DateTime?    @db.Timestamptz(6)
+    nodes_nodes_fromRealmIdTorealms Node[]       @relation("nodes_fromRealmIdTorealms")
+    nodes_nodes_toRealmIdTorealms   Node[]       @relation("nodes_toRealmIdTorealms")
+    projects                        Project[]
+    applications                    Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "realms_applicationid_foreign")
+    createdByProfile                Profile?     @relation("realms_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "realms_createdby_foreign")
+    deletedByProfile                Profile?     @relation("realms_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "realms_deletedby_foreign")
+    editedByProfile                 Profile?     @relation("realms_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "realms_editedby_foreign")
+    ownerIdProfile                  Profile?     @relation("realms_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "realms_ownerid_foreign")
+
+    @@index([deletedAt], map: "realms_idx_deleted_at")
+    @@index([key], map: "realms_idx_key")
+    @@index([name], map: "realms_idx_name")
+    @@index([status], map: "realms_idx_status")
+    @@index([createdAt, updatedAt], map: "realms_mul_timestamp")
+    @@map("realms")
+}
+
+model Review {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "reviews_applicationid_foreign")
+    createdByProfile Profile?     @relation("reviews_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "reviews_createdby_foreign")
+    deletedByProfile Profile?     @relation("reviews_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "reviews_deletedby_foreign")
+    editedByProfile  Profile?     @relation("reviews_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "reviews_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("reviews_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "reviews_ownerid_foreign")
+
+    @@index([deletedAt], map: "reviews_idx_deleted_at")
+    @@index([key], map: "reviews_idx_key")
+    @@index([name], map: "reviews_idx_name")
+    @@index([status], map: "reviews_idx_status")
+    @@index([createdAt, updatedAt], map: "reviews_mul_timestamp")
+    @@map("reviews")
+}
+
+model Role {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "roles_applicationid_foreign")
+    createdByProfile Profile?     @relation("roles_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "roles_createdby_foreign")
+    deletedByProfile Profile?     @relation("roles_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "roles_deletedby_foreign")
+    editedByProfile  Profile?     @relation("roles_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "roles_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("roles_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "roles_ownerid_foreign")
+
+    @@index([deletedAt], map: "roles_idx_deleted_at")
+    @@index([key], map: "roles_idx_key")
+    @@index([name], map: "roles_idx_name")
+    @@index([status], map: "roles_idx_status")
+    @@index([createdAt, updatedAt], map: "roles_mul_timestamp")
+    @@map("roles")
+}
+
+model Server {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "servers_applicationid_foreign")
+    createdByProfile Profile?     @relation("servers_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "servers_createdby_foreign")
+    deletedByProfile Profile?     @relation("servers_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "servers_deletedby_foreign")
+    editedByProfile  Profile?     @relation("servers_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "servers_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("servers_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "servers_ownerid_foreign")
+
+    @@index([deletedAt], map: "servers_idx_deleted_at")
+    @@index([key], map: "servers_idx_key")
+    @@index([name], map: "servers_idx_name")
+    @@index([status], map: "servers_idx_status")
+    @@index([createdAt, updatedAt], map: "servers_mul_timestamp")
+    @@map("servers")
+}
+
+model Session {
+    sid     String   @id @db.VarChar(255)
+    sess    Json
+    expired DateTime @db.Timestamptz(6)
+
+    @@map("sessions")
+}
+
+model Suggestion {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "suggestions_applicationid_foreign")
+    createdByProfile Profile?     @relation("suggestions_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "suggestions_createdby_foreign")
+    deletedByProfile Profile?     @relation("suggestions_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "suggestions_deletedby_foreign")
+    editedByProfile  Profile?     @relation("suggestions_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "suggestions_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("suggestions_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "suggestions_ownerid_foreign")
+
+    @@index([deletedAt], map: "suggestions_idx_deleted_at")
+    @@index([key], map: "suggestions_idx_key")
+    @@index([name], map: "suggestions_idx_name")
+    @@index([status], map: "suggestions_idx_status")
+    @@index([createdAt, updatedAt], map: "suggestions_mul_timestamp")
+    @@map("suggestions")
+}
+
+model Tag {
+    id                          Int          @id @default(autoincrement())
+    name                        String?      @db.VarChar(100)
+    key                         String?      @db.VarChar(100)
+    value                       String?
+    meta                        Json
+    status                      String?      @default("active")
+    applicationId               Int?
+    ownerId                     Int?
+    createdBy                   Int?
+    editedBy                    Int?
+    deletedBy                   Int?
+    createdAt                   DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                   DateTime?    @db.Timestamptz(6)
+    deletedAt                   DateTime?    @db.Timestamptz(6)
+    nodes_nodes_fromTagIdTotags Node[]       @relation("nodes_fromTagIdTotags")
+    nodes_nodes_toTagIdTotags   Node[]       @relation("nodes_toTagIdTotags")
+    applications                Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "tags_applicationid_foreign")
+    createdByProfile            Profile?     @relation("tags_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "tags_createdby_foreign")
+    deletedByProfile            Profile?     @relation("tags_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "tags_deletedby_foreign")
+    editedByProfile             Profile?     @relation("tags_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "tags_editedby_foreign")
+    ownerIdProfile              Profile?     @relation("tags_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "tags_ownerid_foreign")
+
+    @@index([deletedAt], map: "tags_idx_deleted_at")
+    @@index([key], map: "tags_idx_key")
+    @@index([name], map: "tags_idx_name")
+    @@index([status], map: "tags_idx_status")
+    @@index([createdAt, updatedAt], map: "tags_mul_timestamp")
+    @@map("tags")
+}
+
+model Token {
+    id                Int          @id @default(autoincrement())
+    name              String?      @db.VarChar(100)
+    key               String?      @db.VarChar(100)
+    value             String?
+    meta              Json
+    status            String?      @default("active")
+    applicationId     Int?
+    ownerId           Int?
+    createdBy         Int?
+    editedBy          Int?
+    deletedBy         Int?
+    createdAt         DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt         DateTime?    @db.Timestamptz(6)
+    deletedAt         DateTime?    @db.Timestamptz(6)
+    code              String?      @db.VarChar(100)
+    type              String?      @db.VarChar(100)
+    marketCap         Decimal?     @db.Decimal(8, 2)
+    priceUsd          String?      @db.VarChar(100)
+    priceBtc          String?      @db.VarChar(100)
+    circulatingSupply String?      @db.VarChar(100)
+    volume24h         String?      @db.VarChar(100)
+    applications      Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "tokens_applicationid_foreign")
+    createdByProfile  Profile?     @relation("tokens_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "tokens_createdby_foreign")
+    deletedByProfile  Profile?     @relation("tokens_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "tokens_deletedby_foreign")
+    editedByProfile   Profile?     @relation("tokens_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "tokens_editedby_foreign")
+    ownerIdProfile    Profile?     @relation("tokens_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "tokens_ownerid_foreign")
+
+    @@index([deletedAt], map: "tokens_idx_deleted_at")
+    @@index([key], map: "tokens_idx_key")
+    @@index([name], map: "tokens_idx_name")
+    @@index([status], map: "tokens_idx_status")
+    @@index([createdAt, updatedAt], map: "tokens_mul_timestamp")
+    @@map("tokens")
+}
+
+model Tournament {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "tournaments_applicationid_foreign")
+    createdByProfile Profile?     @relation("tournaments_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "tournaments_createdby_foreign")
+    deletedByProfile Profile?     @relation("tournaments_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "tournaments_deletedby_foreign")
+    editedByProfile  Profile?     @relation("tournaments_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "tournaments_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("tournaments_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "tournaments_ownerid_foreign")
+
+    @@index([deletedAt], map: "tournaments_idx_deleted_at")
+    @@index([key], map: "tournaments_idx_key")
+    @@index([name], map: "tournaments_idx_name")
+    @@index([status], map: "tournaments_idx_status")
+    @@index([createdAt, updatedAt], map: "tournaments_mul_timestamp")
+    @@map("tournaments")
+}
+
+model TradeIdea {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "tradeideas_applicationid_foreign")
+    createdByProfile Profile?     @relation("tradeIdeas_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "tradeideas_createdby_foreign")
+    deletedByProfile Profile?     @relation("tradeIdeas_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "tradeideas_deletedby_foreign")
+    editedByProfile  Profile?     @relation("tradeIdeas_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "tradeideas_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("tradeIdeas_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "tradeideas_ownerid_foreign")
+
+    @@index([deletedAt], map: "tradeIdeas_idx_deleted_at")
+    @@index([key], map: "tradeIdeas_idx_key")
+    @@index([name], map: "tradeIdeas_idx_name")
+    @@index([status], map: "tradeIdeas_idx_status")
+    @@index([createdAt, updatedAt], map: "tradeIdeas_mul_timestamp")
+    @@map("tradeIdeas")
+}
+
+model Trade {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "trades_applicationid_foreign")
+    createdByProfile Profile?     @relation("trades_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "trades_createdby_foreign")
+    deletedByProfile Profile?     @relation("trades_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "trades_deletedby_foreign")
+    editedByProfile  Profile?     @relation("trades_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "trades_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("trades_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "trades_ownerid_foreign")
+
+    @@index([deletedAt], map: "trades_idx_deleted_at")
+    @@index([key], map: "trades_idx_key")
+    @@index([name], map: "trades_idx_name")
+    @@index([status], map: "trades_idx_status")
+    @@index([createdAt, updatedAt], map: "trades_mul_timestamp")
+    @@map("trades")
+}
+
+model Transaction {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "transactions_applicationid_foreign")
+    createdByProfile Profile?     @relation("transactions_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "transactions_createdby_foreign")
+    deletedByProfile Profile?     @relation("transactions_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "transactions_deletedby_foreign")
+    editedByProfile  Profile?     @relation("transactions_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "transactions_editedby_foreign")
+    ownerIdProfile   Profile?     @relation("transactions_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "transactions_ownerid_foreign")
+
+    @@index([deletedAt], map: "transactions_idx_deleted_at")
+    @@index([key], map: "transactions_idx_key")
+    @@index([name], map: "transactions_idx_name")
+    @@index([status], map: "transactions_idx_status")
+    @@index([createdAt, updatedAt], map: "transactions_mul_timestamp")
+    @@map("transactions")
+}
+
+model Vote {
+    id                            Int          @id @default(autoincrement())
+    name                          String?      @db.VarChar(100)
+    key                           String?      @db.VarChar(100)
+    value                         String?
+    meta                          Json
+    status                        String?      @default("active")
+    applicationId                 Int?
+    ownerId                       Int?
+    createdBy                     Int?
+    editedBy                      Int?
+    deletedBy                     Int?
+    createdAt                     DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt                     DateTime?    @db.Timestamptz(6)
+    deletedAt                     DateTime?    @db.Timestamptz(6)
+    ratingId                      Int?
+    nodes_nodes_fromVoteIdTovotes Node[]       @relation("nodes_fromVoteIdTovotes")
+    nodes_nodes_toVoteIdTovotes   Node[]       @relation("nodes_toVoteIdTovotes")
+    applications                  Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "votes_applicationid_foreign")
+    createdByProfile              Profile?     @relation("votes_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "votes_createdby_foreign")
+    deletedByProfile              Profile?     @relation("votes_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "votes_deletedby_foreign")
+    editedByProfile               Profile?     @relation("votes_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "votes_editedby_foreign")
+    ownerIdProfile                Profile?     @relation("votes_ownerIdToprofiles", fields: [ownerId], references: [id], onUpdate: NoAction, map: "votes_ownerid_foreign")
+    ratings                       Rating?      @relation(fields: [ratingId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "votes_ratingid_foreign")
+
+    @@index([deletedAt], map: "votes_idx_deleted_at")
+    @@index([key], map: "votes_idx_key")
+    @@index([name], map: "votes_idx_name")
+    @@index([status], map: "votes_idx_status")
+    @@index([createdAt, updatedAt], map: "votes_mul_timestamp")
+    @@map("votes")
+}
+
+model PaymentRequest {
+    id               Int          @id @default(autoincrement())
+    name             String?      @db.VarChar(100)
+    key              String?      @db.VarChar(100)
+    value            String?
+    meta             Json
+    status           String?      @default("active")
+    applicationId    Int?
+    ownerId          Int?
+    createdBy        Int?
+    editedBy         Int?
+    deletedBy        Int?
+    createdAt        DateTime     @default(now()) @db.Timestamptz(6)
+    updatedAt        DateTime?    @db.Timestamptz(6)
+    deletedAt        DateTime?    @db.Timestamptz(6)
+    ratingId         Int?
+    applications     Application? @relation(fields: [applicationId], references: [id], onUpdate: NoAction, map: "paymentRequests_applicationid_foreign")
+    createdByProfile Profile?     @relation("paymentRequests_createdByToprofiles", fields: [createdBy], references: [id], onUpdate: SetNull, map: "paymentRequests_createdby_foreign")
+    deletedByProfile Profile?     @relation("paymentRequests_deletedByToprofiles", fields: [deletedBy], references: [id], onUpdate: SetNull, map: "paymentRequests_deletedby_foreign")
+    editedByProfile  Profile?     @relation("paymentRequests_editedByToprofiles", fields: [editedBy], references: [id], onUpdate: SetNull, map: "paymentRequests_editedby_foreign")
+
+    @@index([deletedAt], map: "paymentRequests_idx_deleted_at")
+    @@index([key], map: "paymentRequests_idx_key")
+    @@index([name], map: "paymentRequests_idx_name")
+    @@index([status], map: "paymentRequests_idx_status")
+    @@index([createdAt, updatedAt], map: "paymentRequests_mul_timestamp")
+    @@map("paymentRequests")
+}
