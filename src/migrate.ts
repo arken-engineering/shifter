@@ -183,48 +183,32 @@ class ModelWrapper {
 const mongo: any = {}
 let mongoose
 
-function guid() {
-  return uuidv4().toUpperCase()
-}
-
-const defaultOwnerId = ''
-
-const oldPrisma = new OldPrismaClient({
-  datasources: {
-    db: {
-      url: 'postgresql://dev:@localhost:5432/public?user=dev',
-    },
-  },
-})
+// const oldPrisma = new OldPrismaClient({
+//   datasources: {
+//     db: {
+//       url: process.env.OLD_DATABASE_URL,
+//     },
+//   },
+// })
 
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: 'postgresql://dev:@localhost:5432/rune?user=dev',
+      url: process.env.DATABASE_URL,
     },
   },
 })
 
-const map: any = {
-  Organization: {},
-  Account: {},
-  Profile: {},
-  Role: {},
-  Omniverse: {},
-  Metaverse: {},
-  Application: {},
-  Chain: {},
-  Product: {},
-  Game: {},
-}
+const map: any = {}
 
-const gameNumberToGameId = {
-  1: map.Game['Runic Raids'],
-  2: map.Game['Evolution Isles'],
-  3: map.Game['Infinite Arena'],
-  4: map.Game['Guardians Unleashed'],
-  5: map.Game['Heart of the Oasis'],
-}
+const gameNumberToGameId = (id: any) =>
+  ({
+    1: map.Game['Arken: Runic Raids'].id,
+    2: map.Game['Arken: Evolution Isles'].id,
+    3: map.Game['Arken: Infinite Arena'].id,
+    4: map.Game['Arken: Guardians Unleashed'].id,
+    5: map.Game['Arken: Heart of the Oasis'].id,
+  }[id])
 
 async function migrateAccounts() {
   const accounts = await prisma.account.findMany()
@@ -350,8 +334,8 @@ async function migrateClaims() {
   for (const claimRequest of claimRequests) {
     if (!claimRequest) continue
 
-    const profile = await prisma.profile.findFirst({
-      where: { address: { equals: claimRequest.address } },
+    const profile = await mongo.Profile.findOne({
+      address: claimRequest.address,
     })
 
     if (!profile) {
@@ -359,20 +343,27 @@ async function migrateClaims() {
       continue
     }
 
-    await prisma.payment.create({
-      data: {
-        applicationId: map.Application.Arken.id,
-        name: claimRequest.username,
-        value: claimRequest.address,
-        key: claimRequest.id,
-        meta: claimRequest,
-        status: claimRequest.status,
-        ownerId: profile.id,
-        createdAt: new Date(claimRequest.createdAt),
-      },
+    const existingPayment = await mongo.Payment.findOne({
+      key: claimRequest.id,
     })
 
-    // console.log(claimRequest.id)
+    if (existingPayment) {
+      console.log(`Payment with key ${claimRequest.id} already exists.`)
+      continue
+    }
+
+    await mongo.Payment.create({
+      applicationId: map.Application.Arken.id,
+      name: claimRequest.username,
+      value: claimRequest.address,
+      key: claimRequest.id,
+      meta: claimRequest,
+      status: claimRequest.status,
+      ownerId: profile._id,
+      createdAt: new Date(claimRequest.createdAt),
+    })
+
+    console.log(`Inserted claim request with ID: ${claimRequest.id}`)
   }
 
   console.log('Done')
@@ -381,29 +372,47 @@ async function migrateClaims() {
 async function migrateReferrals() {
   // @ts-ignore
   for (const referral of referrals) {
-    const sender = await prisma.profile.findFirst({
-      where: { name: { equals: referral.referrer } },
+    const sender = await mongo.Profile.findOne({
+      name: referral.referrer,
     })
 
-    const recipient = await prisma.profile.findFirst({
-      where: { address: { equals: referral.address } },
+    const recipient = await mongo.Profile.findOne({
+      address: referral.address,
     })
 
-    await prisma.referral.create({
-      data: {
-        recipientId: recipient.id as never,
-        senderId: sender.id as never,
-        meta: referral,
-        status: referral.status,
-        createdAt: new Date(referral.createdAt),
-      },
+    if (!sender || !recipient) {
+      console.log('Sender or recipient not found', referral)
+      continue
+    }
+
+    const existingReferral = await mongo.Referral.findOne({
+      meta: referral,
     })
 
-    console.log(referral.id)
+    if (existingReferral) {
+      console.log(
+        `Referral already exists with referrer ${referral.referrer} and address ${referral.address}`
+      )
+      continue
+    }
+
+    await mongo.Referral.create({
+      recipientId: recipient._id,
+      senderId: sender._id,
+      meta: referral,
+      status: referral.status,
+      createdAt: new Date(referral.createdAt),
+    })
+
+    console.log(`Inserted referral with ID: ${referral.id}`)
   }
+
+  console.log('Done')
 }
 
 async function migrateAssets() {
+  console.log('Migrating assets')
+
   const items = jetpack.read(path.resolve(`../data/items.json`), 'json')
 
   // @ts-ignore
@@ -503,7 +512,6 @@ async function createItem(item, owner?) {
   // }
 }
 
-
 async function migrateTrades() {
   // {"market": {"trades": []}, "points": 1, "address": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "guildId": 2, "premium": {"locked": 0, "features": [], "unlocked": 0}, "rewards": {"items": [], "runes": {}}, "daoVotes": [], "holdings": {}, "username": "Harry", "evolution": {}, "inventory": {"items": [{"id": 1, "from": "0x6Bf051ce847A0EBBc10fA22884C01D550BD40269", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 8, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 8, "variant": 1, "attributeId": 1}, {"value": 2, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 1}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Magical", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001100810021001111111", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649762142003, "isRetired": true, "shorthand": "8-2", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 8, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 2, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.44, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110081002100111...111", "isUnequipable": false, "isTransferable": true}, {"id": 1, "from": "0x85C07b6a475Ee19218D0ef9C278C7e58715Af842", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 14, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 14, "variant": 1, "attributeId": 1}, {"value": 1, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 0}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Rare", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001101410011001111101", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649764095769, "isRetired": true, "shorthand": "14-1", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 14, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 1, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.85, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110141001100111...101", "isUnequipable": false, "isTransferable": true}, {"id": 3, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000030500020002000024182", "createdAt": 1649763909508, "perfection": 0.5}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10020000201000500240030991", "createdAt": 1649763909610, "perfection": 0.4}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030031002432194", "createdAt": 1649763909691, "perfection": 0.45}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100040033004045827", "createdAt": 1649763909821, "perfection": 0.3}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030034002847742", "createdAt": 1649763909914, "perfection": 0.43}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "100200002010006003200287488", "createdAt": 1649763909984, "perfection": 0.65}, {"id": 4, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10010000410001000120319017", "createdAt": 1649763912928, "perfection": 1}]}, "characters": [{"id": 7, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "699", "transferredAt": 1627276078338}], "permissions": {"admin": {}}, "achievements": [1], "joinedGuildAt": 1627274005785, "rewardHistory": [], "lastGamePlayed": 0, "lifetimeRewards": {"items": [], "runes": {}}, "craftedItemCount": 7, "equippedItemCount": 0, "inventoryItemCount": 0, "transferredInCount": 0, "transferredOutCount": 2, "marketTradeSoldCount": 0, "guildMembershipTokenId": 699, "marketTradeListedCount": 0, "isGuildMembershipActive": true}
   // const profiles = await prisma.profile.findMany()
@@ -562,7 +570,6 @@ async function migrateTrades() {
   //   })
   // }
 }
-
 async function migrateTeams() {
   {
     const overview = guild1OverviewData
@@ -575,16 +582,17 @@ async function migrateTeams() {
     // "icon": "https://rune.farm/images/teams/the-first-ones.png",
     // "backgroundColor": "#fff",
     // "discord": { "role": "862170863827025950", "channel": "862153263804448769" },
-    await prisma.gameTeam.create({
-      data: {
+    const existingTeam = await mongo.Team.findOne({ name: overview.name })
+    if (!existingTeam) {
+      await mongo.Team.create({
         metaverseId: map.Metaverse.Arken.id,
         name: overview.name,
         description: overview.description,
         key: overview.name,
         meta: overview,
         status: 'Active',
-      },
-    })
+      })
+    }
 
     // {
     //   "address": "0xa94210Bce97C665aCd1474B6fC4e9817a456EECd",
@@ -595,229 +603,233 @@ async function migrateTeams() {
     //   "characterId": 6
     // },
     for (const member of overview.memberDetails) {
-      const profile = prisma.profile.findFirst({ where: { address: { equals: member.address } } })
+      const profile = await mongo.Profile.findOne({ address: member.address })
+
+      if (profile) {
+        // Code to handle profile related operations
+        // Example:
+        // await mongo.Character.create({
+        //   profileId: profile._id,
+        //   metaverseId: map.Metaverse.Arken.id,
+        //   ...
+        // });
+      }
     }
 
-    // use profiles to generate characters
+    // Use profiles to generate characters
     // character belongs to profile and metaverse
     // metaverse has a parent metaverse (visualize)
     // team uses character
-    // metaverse acn have list of products (games)
-    //
+    // metaverse can have a list of products (games)
   }
 }
 
-async function migrateAchievements() {
-  const metaverse = await mongo.Metaverse.find({
-    name: 'Arken',
-  })
+// async function migrateAchievements() {
+//   const metaverse = await mongo.Metaverse.findOne({
+//     name: 'Arken',
+//   })
 
-  const achievements = await prisma.achievement.findMany({
-    where: { metaverseId: metaverse.id },
-  })
+//   if (!metaverse) {
+//     console.error('Metaverse not found')
+//     return
+//   }
+
+//   const achievements = await prisma.achievement.findMany({
+//     where: { metaverseId: metaverse.id },
+//   })
+
+//   for (const item of achievements) {
+//     // if (item.icon) item.icon = item.icon.replace('undefined', '');
+
+//     // Check if the achievement already exists in MongoDB
+//     const existingAchievement = await mongo.Achievement.findOne({ key: item.key })
+
+//     if (existingAchievement) {
+//       console.log(`Achievement with key ${item.key} already exists.`)
+//       continue
+//     }
+
+//     // Insert the achievement into MongoDB
+//     const newAchievement = await mongo.Achievement.create({
+//       applicationId: map.Application.Arken.id,
+//       metaverseId: metaverse.id,
+//       name: item.name,
+//       description: '',
+//       key: item.key,
+//       meta: item,
+//       status: item.status,
+//     })
+
+//     console.log(`Inserted achievement with key: ${item.key}`)
+//   }
+
+//   console.log('Migration completed.')
+// }
+
+async function migrateAchievements() {
+  // {"market": {"trades": []}, "points": 1, "address": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "guildId": 2, "premium": {"locked": 0, "features": [], "unlocked": 0}, "rewards": {"items": [], "runes": {}}, "daoVotes": [], "holdings": {}, "username": "Harry", "evolution": {}, "inventory": {"items": [{"id": 1, "from": "0x6Bf051ce847A0EBBc10fA22884C01D550BD40269", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 8, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 8, "variant": 1, "attributeId": 1}, {"value": 2, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 1}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Magical", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001100810021001111111", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649762142003, "isRetired": true, "shorthand": "8-2", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 8, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 2, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.44, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110081002100111...111", "isUnequipable": false, "isTransferable": true}, {"id": 1, "from": "0x85C07b6a475Ee19218D0ef9C278C7e58715Af842", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 14, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 14, "variant": 1, "attributeId": 1}, {"value": 1, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 0}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Rare", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001101410011001111101", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649764095769, "isRetired": true, "shorthand": "14-1", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 14, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 1, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.85, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110141001100111...101", "isUnequipable": false, "isTransferable": true}, {"id": 3, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000030500020002000024182", "createdAt": 1649763909508, "perfection": 0.5}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10020000201000500240030991", "createdAt": 1649763909610, "perfection": 0.4}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030031002432194", "createdAt": 1649763909691, "perfection": 0.45}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100040033004045827", "createdAt": 1649763909821, "perfection": 0.3}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030034002847742", "createdAt": 1649763909914, "perfection": 0.43}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "100200002010006003200287488", "createdAt": 1649763909984, "perfection": 0.65}, {"id": 4, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10010000410001000120319017", "createdAt": 1649763912928, "perfection": 1}]}, "characters": [{"id": 7, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "699", "transferredAt": 1627276078338}], "permissions": {"admin": {}}, "achievements": [1], "joinedGuildAt": 1627274005785, "rewardHistory": [], "lastGamePlayed": 0, "lifetimeRewards": {"items": [], "runes": {}}, "craftedItemCount": 7, "equippedItemCount": 0, "inventoryItemCount": 0, "transferredInCount": 0, "transferredOutCount": 2, "marketTradeSoldCount": 0, "guildMembershipTokenId": 699, "marketTradeListedCount": 0, "isGuildMembershipActive": true}
+
+  // {
+  //   "id": 1,
+  //   "key": "CRAFT_1",
+  //   "name": "New Beginnings",
+  //   "category": "Basic",
+  //   "isEnabled": true,
+  //   "icon": "undefinedimages/achievements/blue/s_030.PNG",
+  //   "points": 1,
+  //   "type": "Crafting",
+  //   "isCompleted": false,
+  //   "details": { "Date": "Anytime", "Total": 0 },
+  //   "branches": { "1": { "description": ["Craft 1 Runeword"] }, "2": { "description": "Craft 1 Runeword" } }
+  // },
+
+  const metaverse = await mongo.Metaverse.findOne({ name: 'Arken' })
+
+  if (!metaverse) {
+    console.error('Metaverse not found')
+    return
+  }
 
   for (const item of achievements) {
-    // if (item.icon) item.icon = item.icon.replace('undefined', '');
+    if (item.icon) item.icon = item.icon.replace('undefined', '')
 
     // Check if the achievement already exists in MongoDB
     const existingAchievement = await mongo.Achievement.findOne({ key: item.key })
-
     if (existingAchievement) {
       console.log(`Achievement with key ${item.key} already exists.`)
       continue
     }
 
     // Insert the achievement into MongoDB
-    await mongo.Achievement.create({
-      applicationId: map.Application.Arken.id.id,
-      metaverseId: metaverse.id,
+    const newAchievement = await mongo.Achievement.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.key,
       meta: item,
-      status: item.status,
+      status: item.isEnabled ? 'Active' : 'Pending',
     })
 
-    console.log(`Inserted achievement with ID: ${newId}`)
+    console.log(`Inserted achievement with key: ${item.key}`)
   }
 
   console.log('Migration completed.')
 }
 
-// async function migrateAchievements() {
-//   // {"market": {"trades": []}, "points": 1, "address": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "guildId": 2, "premium": {"locked": 0, "features": [], "unlocked": 0}, "rewards": {"items": [], "runes": {}}, "daoVotes": [], "holdings": {}, "username": "Harry", "evolution": {}, "inventory": {"items": [{"id": 1, "from": "0x6Bf051ce847A0EBBc10fA22884C01D550BD40269", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 8, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 8, "variant": 1, "attributeId": 1}, {"value": 2, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 1}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Magical", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001100810021001111111", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649762142003, "isRetired": true, "shorthand": "8-2", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 8, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 2, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.44, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110081002100111...111", "isUnequipable": false, "isTransferable": true}, {"id": 1, "from": "0x85C07b6a475Ee19218D0ef9C278C7e58715Af842", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 14, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 14, "variant": 1, "attributeId": 1}, {"value": 1, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 0}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Rare", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001101410011001111101", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649764095769, "isRetired": true, "shorthand": "14-1", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 14, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 1, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.85, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110141001100111...101", "isUnequipable": false, "isTransferable": true}, {"id": 3, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000030500020002000024182", "createdAt": 1649763909508, "perfection": 0.5}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10020000201000500240030991", "createdAt": 1649763909610, "perfection": 0.4}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030031002432194", "createdAt": 1649763909691, "perfection": 0.45}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100040033004045827", "createdAt": 1649763909821, "perfection": 0.3}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030034002847742", "createdAt": 1649763909914, "perfection": 0.43}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "100200002010006003200287488", "createdAt": 1649763909984, "perfection": 0.65}, {"id": 4, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10010000410001000120319017", "createdAt": 1649763912928, "perfection": 1}]}, "characters": [{"id": 7, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "699", "transferredAt": 1627276078338}], "permissions": {"admin": {}}, "achievements": [1], "joinedGuildAt": 1627274005785, "rewardHistory": [], "lastGamePlayed": 0, "lifetimeRewards": {"items": [], "runes": {}}, "craftedItemCount": 7, "equippedItemCount": 0, "inventoryItemCount": 0, "transferredInCount": 0, "transferredOutCount": 2, "marketTradeSoldCount": 0, "guildMembershipTokenId": 699, "marketTradeListedCount": 0, "isGuildMembershipActive": true}
-
-//   // {
-//   //   "id": 1,
-//   //   "key": "CRAFT_1",
-//   //   "name": "New Beginnings",
-//   //   "category": "Basic",
-//   //   "isEnabled": true,
-//   //   "icon": "undefinedimages/achievements/blue/s_030.PNG",
-//   //   "points": 1,
-//   //   "type": "Crafting",
-//   //   "isCompleted": false,
-//   //   "details": { "Date": "Anytime", "Total": 0 },
-//   //   "branches": { "1": { "description": ["Craft 1 Runeword"] }, "2": { "description": "Craft 1 Runeword" } }
-//   // },
-
-//   const metaverse = await prisma.metaverse.findFirst({
-//     where: { name: { equals: 'Arken' } },
-//   })
-
-//   for (const item of achievements) {
-//
-
-//     if (item.icon) item.icon = item.icon.replace('undefined', '')
-
-//     await prisma.achievement.create({
-//       data: {
-//         metaverseId: map.Metaverse.Arken.id,
-//
-//         name: item.name,
-//         description: '',
-//         key: item.key,
-//         meta: item,
-//         status: item.isEnabled ? 'Active' : 'Pending',
-//
-//       },
-//     })
-//   }
-// }
-
 async function migrateAreas() {
   for (const item of areas) {
-    await prisma.gameArea.create({
-      data: {
-        metaverseId: map.Metaverse.Arken.id,
-        name: item.name,
-        description: item.description,
-        key: item.id + '',
-        meta: item,
-        status: item.isEnabled ? 'Active' : 'Pending',
-      },
+    // Check if the area already exists in MongoDB
+    const existingArea = await mongo.GameArea.findOne({ name: item.name })
+    if (existingArea) {
+      console.log(`Area with name ${item.name} already exists.`)
+      continue
+    }
+
+    // Insert the area into MongoDB
+    const newArea = await mongo.GameArea.create({
+      metaverseId: map.Metaverse.Arken.id,
+      name: item.name,
+      description: item.description,
+      key: item.id + '',
+      meta: item,
+      status: item.isEnabled ? 'Active' : 'Pending',
     })
 
-    // "types": [
-    //   18
-    // ],
+    await newArea.save()
+
+    // "types": [18],
     // "npcs": [],
     // "guilds": [],
-    // "factions": [
-    //   9
-    // ],
+    // "factions": [9],
     // "characters": [],
-    // "characterTypes": [
-    //   4,
-    //   5,
-    //   8,
-    //   9,
-    //   13,
-    //   14
-    // ],
+    // "characterTypes": [4, 5, 8, 9, 13, 14],
     // "timeGates": [],
-    // "itemMaterials": [
-    //   1,
-    //   3,
-    //   4,
-    //   5,
-    //   9,
-    //   14,
-    //   21,
-    //   22,
-    //   23,
-    //   37
-    // ],
-    // "biomes": [
-    //   6,
-    //   13,
-    //   14,
-    //   15,
-    //   22,
-    //   24,
-    //   27,
-    //   58,
-    //   59
-    // ]
+    // "itemMaterials": [1, 3, 4, 5, 9, 14, 21, 22, 23, 37],
+    // "biomes": [6, 13, 14, 15, 22, 24, 27, 58, 59]
   }
+
+  console.log('Migration completed.')
 }
+
 async function migrateCharacterAttributes() {
+  console.log('Migrating character attributes')
+
   for (const item of characterAttributes) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const mongo.existingItem = await CharacterAttribute.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.CharacterAttribute.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newCharacterAttribute = new mongo.CharacterAttribute({
+    const newCharacterAttribute = await mongo.CharacterAttribute.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newCharacterAttribute.save();
+    await newCharacterAttribute.save()
   }
 }
 
 async function migrateSkillMods() {
   for (const item of skillMods) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.SkillMod.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.SkillMod.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newSkillMod = new mongo.SkillMod({
+    const newSkillMod = await mongo.SkillMod.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newSkillMod.save();
+    await newSkillMod.save()
   }
 }
 
 async function migrateSkillClassifications() {
   for (const item of skillClassifications) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.SkillClassification.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.SkillClassification.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newSkillClassification = new mongo.SkillClassification({
+    const newSkillClassification = await mongo.SkillClassification.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newSkillClassification.save();
+    await newSkillClassification.save()
   }
 }
 
 async function migrateSkillConditions() {
   for (const item of skillConditions) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.SkillCondition.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.SkillCondition.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newSkillCondition = new mongo.SkillCondition({
+    const newSkillCondition = await mongo.SkillCondition.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newSkillCondition.save();
+    await newSkillCondition.save()
   }
 }
 // async function migrateSkillConditionParams() {
@@ -841,81 +853,83 @@ async function migrateSkillConditions() {
 // }
 async function migrateSkillStatusEffects() {
   for (const item of skillStatusEffects) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.SkillStatusEffect.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.SkillStatusEffect.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newSkillStatusEffect = new mongo.SkillStatusEffect({
+    const newSkillStatusEffect = await mongo.SkillStatusEffect.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newSkillStatusEffect.save();
+    await newSkillStatusEffect.save()
   }
 }
 
 async function migrateSkillTrees() {
+  const skillTrees = []
+
   for (const item of skillTrees) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.SkillTree.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.SkillTree.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newSkillTree = new mongo.SkillTree({
+    const newSkillTree = await mongo.SkillTree.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newSkillTree.save();
+    await newSkillTree.save()
   }
 }
 
 async function migrateSkillTreeNodes() {
   for (const item of skillTreeNodes) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.SkillTreeNode.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.SkillTreeNode.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newSkillTreeNode = new mongo.SkillTreeNode({
+    const newSkillTreeNode = await mongo.SkillTreeNode.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newSkillTreeNode.save();
+    await newSkillTreeNode.save()
   }
 }
 
 async function migrateSkills() {
   for (const item of skills) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.Skill.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Skill.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newSkill = new mongo.Skill({
+    const newSkill = await mongo.Skill.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newSkill.save();
+    await newSkill.save()
   }
 }
 
@@ -923,163 +937,163 @@ async function migrateItemTransmuteRules() {
   const transmuteRules = [
     { id: 1, name: 'Increase Attribute', chance: 0.1 },
     { id: 1, name: 'Decrease Attribute', chance: 0.01 },
-  ];
+  ]
 
   for (const item of transmuteRules) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemTransmuteRule.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemTransmuteRule.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemTransmuteRule = new mongo.ItemTransmuteRule({
+    const newItemTransmuteRule = await mongo.ItemTransmuteRule.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemTransmuteRule.save();
+    await newItemTransmuteRule.save()
   }
 }
 
 async function migrateCharacterTitles() {
   for (const item of characterTitles) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.CharacterTitle.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.CharacterTitle.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newCharacterTitle = new mongo.CharacterTitle({
+    const newCharacterTitle = await mongo.CharacterTitle.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newCharacterTitle.save();
+    await newCharacterTitle.save()
   }
 }
 
 async function migrateCharacterTypes() {
   for (const item of characterTypes) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.CharacterType.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.CharacterType.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newCharacterType = new mongo.CharacterType({
+    const newCharacterType = await mongo.CharacterType.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.id + '',
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
-    });
+    })
 
-    await newCharacterType.save();
+    await newCharacterType.save()
   }
 }
 
 async function migrateActs() {
   for (const item of acts) {
-    const existingItem = await mongo.Act.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Act.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newAct = new mongo.Act({
+    const newAct = await mongo.Act.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.id + '',
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
-    });
+    })
 
-    await newAct.save();
+    await newAct.save()
   }
 }
 
 async function migrateEras() {
   for (const item of eras) {
-    const existingItem = await mongo.Era.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Era.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newEra = new mongo.Era({
+    const newEra = await mongo.Era.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.id + '',
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
-    });
+    })
 
-    await newEra.save();
+    await newEra.save()
   }
 }
 
 async function migratePlanets() {
   for (const item of planets) {
-    const existingItem = await mongo.Planet.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Planet.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newPlanet = new mongo.Planet({
+    const newPlanet = await mongo.Planet.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.id + '',
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
-    });
+    })
 
-    await newPlanet.save();
+    await newPlanet.save()
   }
 }
 
 async function migrateSolarSystems() {
   for (const item of solarSystems) {
-    const existingItem = await mongo.SolarSystem.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.SolarSystem.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newSolarSystem = new mongo.SolarSystem({
+    const newSolarSystem = await mongo.SolarSystem.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.id + '',
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
-    });
+    })
 
-    await newSolarSystem.save();
+    await newSolarSystem.save()
   }
 }
 
 async function migrateLore() {
   for (const item of lore) {
-    const existingItem = await mongo.Lore.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Lore.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newLore = new mongo.Lore({
+    const newLore = await mongo.Lore.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.id + '',
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
-    });
+    })
 
-    await newLore.save();
+    await newLore.save()
   }
 }
 
 async function migrateGames() {
   for (const item of games) {
-    const existingItem = await mongo.Game.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Game.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newGame = new mongo.Game({
+    const newGame = await mongo.Game.create({
       metaverseId: map.Metaverse.Arken.id,
       productId: map.Game[item.name].id,
       name: item.name,
@@ -1087,14 +1101,14 @@ async function migrateGames() {
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newGame.save();
+    await newGame.save()
   }
 }
 
-
-async function migrateGameGuides() {
+async function migrateGuides() {
+  console.log('Migrating game guides')
   // Fetch all game guides from Prisma
   // const gameGuides = await prisma.gameGuide.findMany()
 
@@ -1102,7 +1116,7 @@ async function migrateGameGuides() {
     //
 
     // Check if the game guide already exists in MongoDB
-    const existingGuide = await mongo.GameGuide.find({ name: item.name }).exec()
+    const existingGuide = await mongo.Guide.find({ name: item.name }).exec()
 
     if (existingGuide) {
       console.log(`Game guide with name ${item.name} already exists.`)
@@ -1110,9 +1124,9 @@ async function migrateGameGuides() {
     }
 
     // Insert the game guide into MongoDB
-    await mongo.GameGuide.create({
+    await mongo.Guide.create({
       metaverseId: map.Metaverse.Arken.id,
-      gameId: gameNumberToGameId[item.game],
+      gameId: gameNumberToGameId(item.game),
       //
       name: item.name,
       description: '',
@@ -1128,7 +1142,7 @@ async function migrateGameGuides() {
   }
 }
 
-// async function migrateGameGuides() {
+// async function migrateGuides() {
 //   for (const item of gameInfo) {
 //
 
@@ -1143,7 +1157,7 @@ async function migrateGameGuides() {
 //     await prisma.gameGuide.create({
 //       data: {
 //         metaverseId: map.Metaverse.Arken.id,
-//         gameId: gameNumberToGameId[item.game],
+//         gameId: gameNumberToGameId(item.game),
 //
 //         name: item.name,
 //         description: '',
@@ -1159,79 +1173,41 @@ async function migrateGameGuides() {
 
 async function migrateCharacterClasses() {
   for (const item of characterClasses) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.CharacterClass.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.CharacterClass.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newCharacterClass = new mongo.CharacterClass({
+    const newCharacterClass = await mongo.CharacterClass.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.name,
       meta: item,
-      status: item.isPlayable ? 'active' : 'draft',
-    });
+      status: item.isPlayable ? 'Active' : 'Pending',
+    })
 
-    await newCharacterClass.save();
+    await newCharacterClass.save()
   }
 }
 
 async function migrateCharacterFactions() {
   for (const item of characterFactions) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.CharacterFaction.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.CharacterFaction.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newCharacterFaction = new mongo.CharacterFaction({
+    const newCharacterFaction = await mongo.CharacterFaction.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.name,
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
-    });
+    })
 
-    await newCharacterFaction.save();
-  }
-}
-
-async function migrateAreaNameChoices() {
-  for (const item of areaNameChoices) {
-    if (!item.name) continue;
-
-    const existingItem = await mongo.AreaNameChoice.findOne({ name: item.name });
-    if (existingItem) continue;
-
-    const newAreaNameChoice = new mongo.AreaNameChoice({
-      metaverseId: map.Metaverse.Arken.id,
-      name: item.name,
-      key: item.id + '',
-      meta: item,
-      status: 'Active',
-    });
-
-    await newAreaNameChoice.save();
-  }
-}
-
-async function migrateCharacterNameChoices() {
-  for (const item of characterNameChoices) {
-    if (!item.name) continue;
-
-    const existingItem = await mongo.CharacterNameChoice.findOne({ name: item.name });
-    if (existingItem) continue;
-
-    const newCharacterNameChoice = new mongo.CharacterNameChoice({
-      metaverseId: map.Metaverse.Arken.id,
-      name: item.name,
-      key: item.id + '',
-      meta: item,
-      status: 'Active',
-    });
-
-    await newCharacterNameChoice.save();
+    await newCharacterFaction.save()
   }
 }
 
@@ -1249,7 +1225,7 @@ async function migrateCharacterNameChoices() {
 //         description: item.description,
 //         key: item.name,
 //         meta: item,
-//         status: item.isPlayable ? 'active' : 'draft',
+//         status: item.isPlayable ? 'Active' : 'Pending',
 //
 //       },
 //     })
@@ -1270,7 +1246,7 @@ async function migrateCharacterNameChoices() {
 //         description: item.description,
 //         key: item.name,
 //         meta: item,
-//         status: item.isPlayable ? 'active' : 'draft',
+//         status: item.isPlayable ? 'Active' : 'Pending',
 //
 //       },
 //     })
@@ -1279,39 +1255,39 @@ async function migrateCharacterNameChoices() {
 
 async function migrateAreaNameChoices() {
   for (const item of areaNameChoices) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.AreaNameChoice.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.AreaNameChoice.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newAreaNameChoice = new mongo.AreaNameChoice({
+    const newAreaNameChoice = await mongo.AreaNameChoice.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newAreaNameChoice.save();
+    await newAreaNameChoice.save()
   }
 }
 
 async function migrateCharacterNameChoices() {
   for (const item of characterNameChoices) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.CharacterNameChoice.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.CharacterNameChoice.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newCharacterNameChoice = new mongo.CharacterNameChoice({
+    const newCharacterNameChoice = await mongo.CharacterNameChoice.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       key: item.id + '',
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newCharacterNameChoice.save();
+    await newCharacterNameChoice.save()
   }
 }
 // async function  migrateCharacterMovementStasuses() {
@@ -1328,7 +1304,7 @@ async function migrateCharacterNameChoices() {
 //         description: item.description,
 //         key: item.name,
 //         meta: item,
-//         status: item.isPlayable ? 'active' : 'draft',
+//         status: item.isPlayable ? 'Active' : 'Pending',
 //
 //       },
 //     })
@@ -1349,7 +1325,7 @@ async function migrateCharacterNameChoices() {
 //         description: item.description,
 //         key: item.name,
 //         meta: item,
-//         status: item.isPlayable ? 'active' : 'draft',
+//         status: item.isPlayable ? 'Active' : 'Pending',
 //
 //       },
 //     })
@@ -1358,373 +1334,378 @@ async function migrateCharacterNameChoices() {
 
 async function migrateCharacterRaces() {
   for (const item of characterRaces) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.CharacterRace.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.CharacterRace.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newCharacterRace = new mongo.CharacterRace({
+    const newCharacterRace = await mongo.CharacterRace.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.name,
       meta: item,
-      status: item.isPlayable ? 'active' : 'draft',
-    });
+      status: item.isPlayable ? 'Active' : 'Pending',
+    })
 
-    await newCharacterRace.save();
+    await newCharacterRace.save()
   }
 }
 
 async function migrateEnergies() {
   for (const item of energies) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.Energy.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Energy.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newEnergy = new mongo.Energy({
+    const newEnergy = await mongo.Energy.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newEnergy.save();
+    await newEnergy.save()
   }
 }
 
 async function migrateNpcs() {
   for (const item of npcs) {
-    if (!item.title) continue;
+    if (!item.title) continue
 
-    const existingItem = await mongo.Npc.findOne({ name: item.title });
-    if (existingItem) continue;
+    const existingItem = await mongo.Npc.findOne({ name: item.title })
+    if (existingItem) continue
 
-    const newNpc = new mongo.Npc({
+    const newNpc = await mongo.Npc.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.title,
       description: item.description,
       key: item.title,
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
-    });
+    })
 
-    await newNpc.save();
+    await newNpc.save()
   }
 }
 
-async function migrateAreaTypes() {
-  for (const item of areaTypes) {
-    if (!item.name) continue;
+// async function migrateAreaTypes() {
+//   for (const item of areaTypes) {
+//     if (!item.name) continue
 
-    const existingItem = await mongo.AreaType.findOne({ name: item.name });
-    if (existingItem) continue;
+//     const existingItem = await mongo.AreaType.findOne({ name: item.name })
+//     if (existingItem) continue
 
-    const newAreaType = new mongo.AreaType({
-      metaverseId: map.Metaverse.Arken.id,
-      name: item.name,
-      description: item.description,
-      key: item.name,
-      meta: item,
-      status: item.isEnabled ? 'Active' : 'Pending',
-    });
+//     const newAreaType = await mongo.AreaType.create({
+//       metaverseId: map.Metaverse.Arken.id,
+//       name: item.name,
+//       description: item.description,
+//       key: item.name,
+//       meta: item,
+//       status: item.isEnabled ? 'Active' : 'Pending',
+//     })
 
-    await newAreaType.save();
-  }
-}
+//     await newAreaType.save()
+//   }
+// }
 
-async function migrateAreaLandmarks() {
-  for (const item of areaLandmarks) {
-    if (!item.name) continue;
+// async function migrateAreaLandmarks() {
+//   for (const item of areaLandmarks) {
+//     if (!item.name) continue
 
-    const existingItem = await mongo.AreaLandmark.findOne({ name: item.name });
-    if (existingItem) continue;
+//     const existingItem = await mongo.AreaLandmark.findOne({ name: item.name })
+//     if (existingItem) continue
 
-    const area = await mongo.Area.findOne({ key: item.area + '' });
+//     const area = await mongo.Area.findOne({ key: item.area + '' })
 
-    const newAreaLandmark = new mongo.AreaLandmark({
-      metaverseId: map.Metaverse.Arken.id,
-      name: item.name,
-      description: item.description,
-      key: item.name,
-      meta: item,
-      status: item.isEnabled ? 'Active' : 'Pending',
-      areaId: area ? area._id : null,
-    });
+//     const newAreaLandmark = await mongo.AreaLandmark.create({
+//       metaverseId: map.Metaverse.Arken.id,
+//       name: item.name,
+//       description: item.description,
+//       key: item.name,
+//       meta: item,
+//       status: item.isEnabled ? 'Active' : 'Pending',
+//       areaId: area ? area._id : null,
+//     })
 
-    await newAreaLandmark.save();
-  }
-}
+//     await newAreaLandmark.save()
+//   }
+// }
 
 async function migrateBiomes() {
   for (const item of biomes) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.Biome.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Biome.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newBiome = new mongo.Biome({
+    const newBiome = await mongo.Biome.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newBiome.save();
+    await newBiome.save()
   }
 }
 
 async function migrateBiomeFeatures() {
   for (const item of biomeFeatures) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.BiomeFeature.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.BiomeFeature.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newBiomeFeature = new mongo.BiomeFeature({
+    const newBiomeFeature = await mongo.BiomeFeature.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newBiomeFeature.save();
+    await newBiomeFeature.save()
   }
 }
 
 async function migrateItemSpecificTypes() {
   for (const item of itemSpecificTypes) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemType.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemType.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemSpecificType = new mongo.ItemType({
+    const newItemSpecificType = await mongo.ItemType.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemSpecificType.save();
+    await newItemSpecificType.save()
   }
 }
 
 async function migrateItemTypes() {
   for (const item of itemTypes) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemType.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemType.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemType = new mongo.ItemType({
+    const newItemType = await mongo.ItemType.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemType.save();
+    await newItemType.save()
   }
 }
 
-  // "items": [
-  //   1,
-  //   2,
-  //   22,
-  //   2045,
-  //   2046,
-  //   182,
-  //   209,
-  //   612,
-  //   2153,
-  //   16,
-  //   12,
-  //   35,
-  //   2052,
-  //   14,
-  //   2037,
-  //   2035,
-  //   2004,
-  //   628,
-  //   639
-  // ],
-  // "subTypes": [
-  //   1,
-  //   2,
-  //   3,
-  //   5,
-  //   6,
-  //   23,
-  //   28,
-  //   27,
-  //   30,
-  //   38,
-  //   41,
-  //   22
-  // ],
-  // "recipes": [
-  //   1,
-  //   2,
-  //   12,
-  //   14,
-  //   16,
-  //   20
-  // ],
-  // "slots": [
-  //   1,
-  //   2
-  // ]
-}
+// "items": [
+//   1,
+//   2,
+//   22,
+//   2045,
+//   2046,
+//   182,
+//   209,
+//   612,
+//   2153,
+//   16,
+//   12,
+//   35,
+//   2052,
+//   14,
+//   2037,
+//   2035,
+//   2004,
+//   628,
+//   639
+// ],
+// "subTypes": [
+//   1,
+//   2,
+//   3,
+//   5,
+//   6,
+//   23,
+//   28,
+//   27,
+//   30,
+//   38,
+//   41,
+//   22
+// ],
+// "recipes": [
+//   1,
+//   2,
+//   12,
+//   14,
+//   16,
+//   20
+// ],
+// "slots": [
+//   1,
+//   2
+// ]
 
 async function migrateItemSlots() {
   for (const item of itemSlots) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemSlot.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemSlot.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemSlot = new mongo.ItemSlot({
+    const newItemSlot = await mongo.ItemSlot.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemSlot.save();
+    await newItemSlot.save()
   }
 }
 
 async function migrateItemSubTypes() {
   for (const item of itemSubTypes) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemSubType.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemSubType.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemSubType = new mongo.ItemSubType({
+    const newItemSubType = await mongo.ItemSubType.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemSubType.save();
+    await newItemSubType.save()
   }
 }
 
 async function migrateItemMaterials() {
+  console.log('Migrating item materials')
+
   for (const item of itemMaterials) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemMaterial.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemMaterial.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemMaterial = new mongo.ItemMaterial({
+    const newItemMaterial = await mongo.ItemMaterial.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemMaterial.save();
+    await newItemMaterial.save()
   }
 }
 
 async function migrateItemRarities() {
   for (const item of itemRarities) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemRarity.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemRarity.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemRarity = new mongo.ItemRarity({
+    const newItemRarity = await mongo.ItemRarity.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemRarity.save();
+    await newItemRarity.save()
   }
 }
 
 async function migrateItemRecipes() {
+  console.log('Migrating item recipes')
+
   for (const item of itemRecipes) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemRecipe.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemRecipe.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemRecipe = new mongo.ItemRecipe({
+    const newItemRecipe = await mongo.ItemRecipe.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemRecipe.save();
+    await newItemRecipe.save()
   }
 }
 
 async function migrateItemSets() {
   for (const item of itemSets) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemSet.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemSet.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemSet = new mongo.ItemSet({
+    const newItemSet = await mongo.ItemSet.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemSet.save();
+    await newItemSet.save()
   }
 }
 
 async function migrateItemAttributes() {
+  console.log('Migrating item attributes')
+
   for (const item of itemAttributes) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.ItemAttribute.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.ItemAttribute.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newItemAttribute = new mongo.ItemAttribute({
+    const newItemAttribute = await mongo.ItemAttribute.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newItemAttribute.save();
+    await newItemAttribute.save()
   }
 }
 
@@ -1775,46 +1756,46 @@ async function migrateBounties() {
       description:
         'We need help determining the quality of the AI at generated for our Runeword items. Mythics would be the most unique and high quality. Epics would be high quality and slightly unique or a bit less quality but very unique. Rare would be high quality and not unique at all, or low quality and very unique. Magical would be a mix of low quality or low uniqueness, but with some nice ones spread in there for RNG.\n\nThe operation is easy on a technical level, simply download a ZIP folder of the items and move them to the folder based on your judgment.',
     },
-  ];
+  ]
 
   for (const item of bounties) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.Bounty.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Bounty.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newBounty = new mongo.Bounty({
+    const newBounty = await mongo.Bounty.create({
       applicationId: map.Application.Arken.id,
       name: item.name,
       description: item.description,
       key: item.name,
       meta: item,
       status: item.status,
-    });
+    })
 
-    await newBounty.save();
+    await newBounty.save()
   }
 }
 
 async function migratePolls() {
-  const polls = [];
+  const polls = []
 
   for (const item of polls) {
-    if (!item.name) continue;
+    if (!item.name) continue
 
-    const existingItem = await mongo.Poll.findOne({ name: item.name });
-    if (existingItem) continue;
+    const existingItem = await mongo.Poll.findOne({ name: item.name })
+    if (existingItem) continue
 
-    const newPoll = new mongo.Poll({
+    const newPoll = await mongo.Poll.create({
       applicationId: map.Application.Arken.id,
       name: item.name,
       description: item.description,
       key: item.name,
       meta: item,
       status: 'Active',
-    });
+    })
 
-    await newPoll.save();
+    await newPoll.save()
   }
 }
 
@@ -2233,466 +2214,450 @@ async function call(req) {
 }
 
 async function createOmniverse() {
-  let arkenOmniverse = await mongo.Omniverse.findOne({ name: 'Arken' }).exec()
+  console.log('Creating omniverses')
 
-  if (!arkenOmniverse)
-    arkenOmniverse = await mongo.Omniverse.create({
+  map.Omniverse.Arken = await mongo.Omniverse.findOne({ name: 'Arken' }).exec()
+
+  if (!map.Omniverse.Arken)
+    map.Omniverse.Arken = await mongo.Omniverse.create({
       name: 'Arken',
       key: 'arken',
     })
 
-  map.Omniverse.Arken = arkenOmniverse
+  map.Omniverse.Reality = await mongo.Omniverse.findOne({ name: 'Reality' }).exec()
 
-  let arkenMetaverse = await mongo.Metaverse.findOne({ name: 'Arken' }).exec()
+  if (!map.Omniverse.Reality)
+    map.Omniverse.Reality = await mongo.Omniverse.create({
+      name: 'Reality',
+      key: 'reality',
+    })
 
-  if (!arkenMetaverse)
-    arkenMetaverse = await mongo.Metaverse.create({
-      omniverseeId: arkenOmniverse.id,
+  console.log('Creating metaverses')
+
+  map.Metaverse.Arken = await mongo.Metaverse.findOne({ name: 'Arken' }).exec()
+
+  if (!map.Metaverse.Arken)
+    map.Metaverse.Arken = await mongo.Metaverse.create({
+      omniverseId: map.Omniverse.Arken.id,
       name: 'Arken',
       key: 'arken',
     })
 
-  map.Metaverse.Arken = arkenMetaverse.id
+  map.Metaverse.Reality = await mongo.Metaverse.findOne({ name: 'Reality' }).exec()
 
-  let arkenOrganization = await mongo.Organization.findOne({ name: 'Arken' }).exec()
-
-  if (!arkenOrganization)
-    arkenOrganization = await mongo.Organization.create({
-      name: 'Arken',
+  if (!map.Metaverse.Reality)
+    map.Metaverse.Reality = await mongo.Metaverse.create({
+      omniverseId: map.Omniverse.Reality.id,
+      name: 'Reality',
+      key: 'reality',
     })
 
-  map.Organization.Arken = arkenOrganization
+  console.log('Creating universes')
 
-  let returnOrganization = await mongo.Organization.findOne({ name: 'Return' }).exec()
+  map.Universe.Universe = await mongo.Universe.findOne({ name: 'Universe' }).exec()
 
-  if (!returnOrganization)
-    returnOrganization = await mongo.Organization.create({
-      name: 'Return',
+  if (!map.Universe.Universe)
+    map.Universe.Universe = await mongo.Universe.create({
+      metaverseId: map.Metaverse.Reality.id,
+      name: 'Universe',
+      key: 'universe',
     })
 
-  map.Organization.Return = returnOrganization
+  console.log('Creating galaxies')
 
-  let asiOrganization = await mongo.Organization.findOne({ name: 'ASI' }).exec()
+  map.Galaxy.MilkyWay = await mongo.Galaxy.findOne({ name: 'Milky Way' }).exec()
 
-  if (!asiOrganization)
-    asiOrganization = await mongo.Organization.create({
-      name: 'ASI',
+  if (!map.Galaxy.MilkyWay)
+    map.Galaxy.MilkyWay = await mongo.Galaxy.create({
+      metaverseId: map.Metaverse.Reality.id,
+      universe: map.Universe.Universe.id,
+      name: 'Milky Way',
+      key: 'milky-way',
     })
 
-  map.Organization.ASI = asiOrganization
+  console.log('Creating solar systems')
 
-  let userRole = await mongo.Role.findOne({ name: 'User' }).exec()
+  map.SolarSystem.SolarSystem = await mongo.SolarSystem.findOne({ name: 'Solar System' }).exec()
 
-  if (!userRole)
-    userRole = await mongo.Role.create({
-      organizationId: arkenOrganization.id,
+  if (!map.SolarSystem.SolarSystem)
+    map.SolarSystem.SolarSystem = await mongo.SolarSystem.create({
+      metaverseId: map.Metaverse.Reality.id,
+      galaxyId: map.Galaxy.MilkyWay.id,
+      name: 'Solar System',
+      key: 'solar-system',
+    })
+
+  console.log('Creating planets')
+
+  map.Planet.Earth = await mongo.Planet.findOne({ name: 'Earth' }).exec()
+
+  if (!map.Planet.Earth)
+    map.Planet.Earth = await mongo.Planet.create({
+      metaverseId: map.Metaverse.Reality.id,
+      solarSystemId: map.SolarSystem.SolarSystem.id,
+      name: 'Earth',
+      key: 'earth',
+    })
+
+  map.Planet.Mars = await mongo.Planet.findOne({ name: 'Mars' }).exec()
+
+  if (!map.Planet.Mars)
+    map.Planet.Mars = await mongo.Planet.create({
+      metaverseId: map.Metaverse.Reality.id,
+      solarSystemId: map.SolarSystem.SolarSystem.id,
+      name: 'Mars',
+      key: 'mars',
+    })
+
+  // console.log('Creating organizations')
+
+  // let arkenOrganization = await mongo.Organization.findOne({ name: 'Arken' }).exec()
+
+  // if (!arkenOrganization)
+  //   arkenOrganization = await mongo.Organization.create({
+  //     name: 'Arken',
+  //   })
+
+  // map.Organization.Arken = arkenOrganization
+
+  // let returnOrganization = await mongo.Organization.findOne({ name: 'Return' }).exec()
+
+  // if (!returnOrganization)
+  //   returnOrganization = await mongo.Organization.create({
+  //     name: 'Return',
+  //   })
+
+  // map.Organization.Return = returnOrganization
+
+  // let asiOrganization = await mongo.Organization.findOne({ name: 'ASI' }).exec()
+
+  // if (!asiOrganization)
+  //   asiOrganization = await mongo.Organization.create({
+  //     name: 'ASI',
+  //   })
+
+  // map.Organization.ASI = asiOrganization
+
+  console.log('Creating roles')
+
+  map.Role.User = await mongo.Role.findOne({ name: 'User' }).exec()
+
+  if (!map.Role.User)
+    map.Role.User = await mongo.Role.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: 'User',
     })
 
-  map.Role.User = userRole
+  console.log('Creating accounts')
 
-  let zen0Account = await mongo.Account.findOne({ name: 'zen0' }).exec()
+  // mongo.Account.dropIndex('applicationId_1_organizationId_1_username_1')
 
-  if (!zen0Account)
-    zen0Account = await mongo.Account.create({
-      organizationId: arkenOrganization.id,
+  map.Account.zen0 = await mongo.Account.findOne({ username: 'zen0' }).exec()
+
+  if (!map.Account.zen0)
+    map.Account.zen0 = await mongo.Account.create({
+      metaverseId: map.Metaverse.Arken.id,
+      username: 'zen0',
+    })
+
+  console.log('Creating profiles')
+
+  map.Profile.zen0 = await mongo.Profile.findOne({ name: 'zen0' }).exec()
+
+  if (!map.Profile.zen0)
+    map.Profile.zen0 = await mongo.Profile.create({
+      metaverseId: map.Metaverse.Arken.id,
+      accountId: map.Account.zen0.id,
       name: 'zen0',
     })
 
-  map.Account.zen0 = zen0Account
+  console.log('Creating chains')
 
-  let zen0Profile = await mongo.Profile.findOne({ name: 'zen0' }).exec()
+  map.Chain.ETH = await mongo.Chain.findOne({ name: 'Ethereum' }).exec()
 
-  if (!zen0Profile)
-    zen0Profile = await mongo.Profile.create({
-      organizationId: arkenOrganization.id,
-      name: 'zen0',
+  if (!map.Chain.ETH)
+    map.Chain.ETH = await mongo.Chain.create({
+      metaverseId: map.Metaverse.Arken.id,
+      name: 'Ethereum',
     })
 
-  map.Profile.zen0 = zen0Profile
+  map.Chain.TON = await mongo.Chain.findOne({ name: 'TON' }).exec()
 
-  let bscChain = await mongo.Chain.findOne({ name: 'BSC' }).exec()
+  if (!map.Chain.TON)
+    map.Chain.TON = await mongo.Chain.create({
+      metaverseId: map.Metaverse.Arken.id,
+      name: 'TON',
+    })
 
-  if (!bscChain)
-    bscChain = await mongo.Chain.create({
-      organizationId: arkenOrganization.id,
+  map.Chain.MATIC = await mongo.Chain.findOne({ name: 'Polygon' }).exec()
+
+  if (!map.Chain.MATIC)
+    map.Chain.MATIC = await mongo.Chain.create({
+      metaverseId: map.Metaverse.Arken.id,
+      name: 'Polygon',
+    })
+
+  map.Chain.BSC = await mongo.Chain.findOne({ name: 'BSC' }).exec()
+
+  if (!map.Chain.BSC)
+    map.Chain.BSC = await mongo.Chain.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: 'BSC',
     })
 
-  map.Chain.BSC = bscChain
+  map.Chain.IMX = await mongo.Chain.findOne({ name: 'Immutable X' }).exec()
 
-  let cerebroApplication = await mongo.Application.findOne({ name: 'Cerebro' }).exec()
+  if (!map.Chain.IMX)
+    map.Chain.IMX = await mongo.Chain.create({
+      metaverseId: map.Metaverse.Arken.id,
+      name: 'Immutable X',
+    })
 
-  if (!cerebroApplication)
-    cerebroApplication = await mongo.Application.create({
-      organizationId: map.Organization.ASI.id,
-      omniverseId: arkenOmniverse.id,
+  console.log('Creating app: Cerebro')
+
+  map.Application.Cerebro = await mongo.Application.findOne({ name: 'Cerebro' }).exec()
+
+  if (!map.Application.Cerebro)
+    map.Application.Cerebro = await mongo.Application.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: 'Cerebro',
       key: 'cerebro',
     })
 
-  map.Application.Cerebro = cerebroApplication.id
+  console.log('Creating app: Infinite')
 
-  let infiniteArenaApplication = await mongo.Application.findOne({
+  map.Application['Arken: Infinite Arena'] = await mongo.Application.findOne({
     name: 'Arken: Infinite Arena',
   }).exec()
 
-  if (!infiniteArenaApplication)
-    infiniteArenaApplication = await mongo.Application.create({
-      organizationId: map.Organization.Arken.id,
-      omniverseId: arkenOmniverse.id,
+  if (!map.Application['Arken: Infinite Arena'])
+    map.Application['Arken: Infinite Arena'] = await mongo.Application.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: 'Arken: Infinite Arena',
       key: 'arken-arena',
     })
 
-  map.Application[infiniteArenaApplication.name] = infiniteArenaApplication
+  map.Product['Arken: Infinite Arena'] = await mongo.Product.findOne({
+    name: 'Arken: Infinite Arena',
+  }).exec()
 
-  let infiniteArenaProduct = await mongo.Product.findOne({ name: 'Arken: Infinite Arena' }).exec()
-
-  if (!infiniteArenaProduct)
-    infiniteArenaProduct = await mongo.Product.create({
-      applicationId: infiniteArenaApplication.id,
+  if (!map.Product['Arken: Infinite Arena'])
+    map.Product['Arken: Infinite Arena'] = await mongo.Product.create({
+      applicationId: map.Application['Arken: Infinite Arena'].id,
       name: 'Arken: Infinite Arena',
       key: 'arken-arena',
     })
 
-  map.Product[infiniteArenaProduct.name] = infiniteArenaProduct
+  map.Game['Arken: Infinite Arena'] = await mongo.Game.findOne({
+    name: 'Arken: Infinite Arena',
+  }).exec()
 
-  let infiniteArenaGame = await mongo.Game.findOne({ name: 'Arken: Infinite Arena' }).exec()
-
-  if (!infiniteArenaGame)
-    infiniteArenaGame = await mongo.Game.create({
-      productId: infiniteArenaProduct.id,
+  if (!map.Game['Arken: Infinite Arena'])
+    map.Game['Arken: Infinite Arena'] = await mongo.Game.create({
+      productId: map.Product['Arken: Infinite Arena'].id,
       name: 'Arken: Infinite Arena',
       key: 'arken-arena',
     })
-  map.Game['Arken: Infinite Arena'] = infiniteArenaGame.id
 
-  let evolutionApplication = await mongo.Application.findOne({
+  console.log('Creating app: Evolution')
+
+  map.Application['Arken: Evolution Isles'] = await mongo.Application.findOne({
     name: 'Arken: Evolution Isles',
   }).exec()
 
-  if (!evolutionApplication)
-    evolutionApplication = await mongo.Application.create({
-      organizationId: map.Organization.Arken.id,
-      omniverseId: arkenOmniverse.id,
+  if (!map.Application['Arken: Evolution Isles'])
+    map.Application['Arken: Evolution Isles'] = await mongo.Application.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: 'Arken: Evolution Isles',
       key: 'arken-isles',
     })
 
-  map.Application[evolutionApplication.name] = evolutionApplication
+  map.Product['Arken: Evolution Isles'] = await mongo.Product.findOne({
+    name: 'Arken: Evolution Isles',
+  }).exec()
 
-  let evolutionProduct = await mongo.Product.findOne({ name: 'Arken: Evolution Isles' }).exec()
-
-  if (!evolutionProduct)
-    evolutionProduct = await mongo.Product.create({
-      applicationId: evolutionApplication.id,
+  if (!map.Product['Arken: Evolution Isles'])
+    map.Product['Arken: Evolution Isles'] = await mongo.Product.create({
+      applicationId: map.Application['Arken: Evolution Isles'].id,
       name: 'Arken: Evolution Isles',
       key: 'arken-isles',
     })
 
-  map.Product[evolutionProduct.name] = evolutionProduct
+  map.Game['Arken: Evolution Isles'] = await mongo.Game.findOne({
+    name: 'Arken: Evolution Isles',
+  }).exec()
 
-  let evolutionGame = await mongo.Game.findOne({ name: 'Arken: Evolution Isles' }).exec()
-
-  if (!evolutionGame)
-    evolutionGame = await mongo.Game.create({
-      productId: evolutionProduct.id,
+  if (!map.Game['Arken: Evolution Isles'])
+    map.Game['Arken: Evolution Isles'] = await mongo.Game.create({
+      productId: map.Product['Arken: Evolution Isles'].id,
       name: 'Arken: Evolution Isles',
       key: 'arken-isles',
     })
 
-  map.Game['Arken: Evolution Isles'] = evolutionGame
+  console.log('Creating app: Oasis')
 
-  let oasisApplication = await mongo.Application.findOne({
+  map.Application['Arken: Heart of the Oasis'] = await mongo.Application.findOne({
     name: 'Arken: Heart of the Oasis',
   }).exec()
 
-  if (!oasisApplication)
-    oasisApplication = await mongo.Application.create({
-      organizationId: map.Organization.Arken.id,
-      omniverseId: arkenOmniverse.id,
+  if (!map.Application['Arken: Heart of the Oasis'])
+    map.Application['Arken: Heart of the Oasis'] = await mongo.Application.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: 'Arken: Heart of the Oasis',
       key: 'arken-oasis',
     })
 
-  map.Product[infiniteArenaProduct.name] = infiniteArenaProduct
+  map.Product['Arken: Heart of the Oasis'] = await mongo.Product.findOne({
+    name: 'Arken: Heart of the Oasis',
+  }).exec()
 
-  let oasisProduct = await mongo.Product.findOne({ name: 'Arken: Heart of the Oasis' }).exec()
-
-  if (!oasisProduct)
-    oasisProduct = await mongo.Product.create({
-      applicationId: oasisApplication.id,
+  if (!map.Product['Arken: Heart of the Oasis'])
+    map.Product['Arken: Heart of the Oasis'] = await mongo.Product.create({
+      applicationId: map.Application['Arken: Heart of the Oasis'].id,
       name: 'Arken: Heart of the Oasis',
       key: 'arken-oasis',
     })
 
-  map.Product[oasisProduct.name] = oasisProduct
+  map.Game['Arken: Heart of the Oasis'] = await mongo.Game.findOne({
+    name: 'Arken: Heart of the Oasis',
+  })
 
-  let oasisGame = await mongo.Game.findOne({ name: 'Arken: Heart of the Oasis' })
-
-  if (!oasisGame)
-    oasisGame = await mongo.Game.create({
-      productId: oasisProduct.id,
+  if (!map.Game['Arken: Heart of the Oasis'])
+    map.Game['Arken: Heart of the Oasis'] = await mongo.Game.create({
+      productId: map.Product['Arken: Heart of the Oasis'].id,
       name: 'Arken: Heart of the Oasis',
       key: 'arken-oasis',
     })
 
-  map.Game['Arken: Heart of the Oasis'] = oasisGame
+  console.log('Creating app: Raids')
 
-  let raidsApplication = await mongo.Application.findOne({ name: 'Arken: Runic Raids' }).exec()
+  map.Application['Arken: Runic Raids'] = await mongo.Application.findOne({
+    name: 'Arken: Runic Raids',
+  }).exec()
 
-  if (!raidsApplication)
-    raidsApplication = await mongo.Application.create({
-      organizationId: map.Organization.Arken.id,
-      omniverseId: arkenOmniverse.id,
+  if (!map.Application['Arken: Runic Raids'])
+    map.Application['Arken: Runic Raids'] = await mongo.Application.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: 'Arken: Runic Raids',
       key: 'arken-raids',
     })
 
-  map.Product[infiniteArenaProduct.name] = infiniteArenaProduct
+  map.Product['Arken: Runic Raids'] = await mongo.Product.findOne({
+    name: 'Arken: Runic Raids',
+  }).exec()
 
-  let raidsProduct = await mongo.Product.findOne({ name: 'Arken: Runic Raids' }).exec()
-
-  if (!raidsProduct)
-    raidsProduct = await mongo.Product.create({
-      applicationId: raidsApplication.id,
+  if (!map.Product['Arken: Runic Raids'])
+    map.Product['Arken: Runic Raids'] = await mongo.Product.create({
+      applicationId: map.Application['Arken: Runic Raids'].id,
       name: 'Arken: Runic Raids',
       key: 'arken-raids',
     })
 
-  map.Product[raidsProduct.name] = raidsProduct
+  map.Game['Arken: Runic Raids'] = await mongo.Game.findOne({ name: 'Arken: Runic Raids' }).exec()
 
-  let raidGame = await mongo.Game.findOne({ name: 'Arken: Runic Raids' }).exec()
-
-  if (!raidGame)
-    raidGame = await mongo.Game.create({
-      productId: raidsProduct.id,
+  if (!map.Game['Arken: Runic Raids'])
+    map.Game['Arken: Runic Raids'] = await mongo.Game.create({
+      productId: map.Product['Arken: Runic Raids'].id,
       name: 'Arken: Runic Raids',
       key: 'arken-raids',
     })
 
-  map.Game['Arken: Runic Raids'] = raidGame
+  console.log('Creating app: Legends')
 
-  let strikeApplication = await mongo.Application.findOne({ name: 'Arken: Strike Legends' }).exec()
+  map.Application['Arken: Strike Legends'] = await mongo.Application.findOne({
+    name: 'Arken: Strike Legends',
+  }).exec()
 
-  if (!strikeApplication)
-    strikeApplication = await mongo.Application.create({
-      organizationId: map.Organization.Arken.id,
-      omniverseId: arkenOmniverse.id,
+  if (!map.Application['Arken: Strike Legends'])
+    map.Application['Arken: Strike Legends'] = await mongo.Application.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: 'Arken: Strike Legends',
       key: 'arken-legends',
     })
 
-  map.Application[strikeApplication.name] = strikeApplication
+  map.Product['Arken: Strike Legends'] = await mongo.Product.findOne({
+    name: 'Arken: Strike Legends',
+  }).exec()
 
-  let strikeProduct = await mongo.Product.findOne({ name: 'Arken: Strike Legends' }).exec()
-
-  if (!strikeProduct)
-    strikeProduct = await mongo.Product.create({
-      applicationId: strikeApplication.id,
+  if (!map.Product['Arken: Strike Legends'])
+    map.Product['Arken: Strike Legends'] = await mongo.Product.create({
+      applicationId: map.Application['Arken: Strike Legends'].id,
       name: 'Arken: Strike Legends',
       key: 'arken-legends',
     })
 
-  map.Product[strikeProduct.name] = strikeProduct
+  map.Game['Arken: Strike Legends'] = await mongo.Game.findOne({
+    name: 'Arken: Strike Legends',
+  }).exec()
 
-  let strikeGame = await mongo.Game.findOne({ name: 'Arken: Strike Legends' }).exec()
-
-  if (!strikeGame)
-    strikeGame = await mongo.Game.create({
-      productId: strikeProduct.id,
+  if (!map.Game['Arken: Strike Legends'])
+    map.Game['Arken: Strike Legends'] = await mongo.Game.create({
+      productId: map.Product['Arken: Strike Legends'].id,
       name: 'Arken: Strike Legends',
       key: 'arken-legends',
     })
 
-  map.Game['Arken: Strike Legends'] = strikeGame
+  console.log('Creating app: Guardians')
 
-  let guardiansApplication = await mongo.Application.findOne({
+  map.Application['Arken: Guardians Unleashed'] = await mongo.Application.findOne({
     name: 'Arken: Guardians Unleashed',
   }).exec()
 
-  if (!guardiansApplication)
-    guardiansApplication = await mongo.Application.create({
-      organizationId: map.Organization.Arken.id,
-      omniverseId: arkenOmniverse.id,
+  if (!map.Application['Arken: Guardians Unleashed'])
+    map.Application['Arken: Guardians Unleashed'] = await mongo.Application.create({
+      metaverseId: map.Metaverse.Arken.id,
       name: 'Arken: Guardians Unleashed',
       key: 'arken-guardians',
     })
 
-  map.Application[guardiansApplication.name] = guardiansApplication
+  map.Product['Arken: Guardians Unleashed'] = await mongo.Product.findOne({
+    name: 'Arken: Guardians Unleashed',
+  }).exec()
 
-  let guardiansProduct = await mongo.Product.findOne({ name: 'Arken: Guardians Unleashed' }).exec()
-
-  if (!guardiansProduct)
-    guardiansProduct = await mongo.Product.create({
-      applicationId: guardiansApplication.id,
+  if (!map.Product['Arken: Guardians Unleashed'])
+    map.Product['Arken: Guardians Unleashed'] = await mongo.Product.create({
+      applicationId: map.Application['Arken: Guardians Unleashed'].id,
       name: 'Arken: Guardians Unleashed',
       key: 'arken-guardians',
     })
 
-  map.Product[guardiansProduct.name] = guardiansProduct
+  map.Game['Arken: Guardians Unleashed'] = await mongo.Game.findOne({
+    name: 'Arken: Guardians Unleashed',
+  }).exec()
 
-  let guardiansGame = await mongo.Game.findOne({ name: 'Arken: Guardians Unleashed' }).exec()
-
-  if (!guardiansGame)
-    guardiansGame = await mongo.Game.create({
-      productId: guardiansProduct.id,
+  if (!map.Game['Arken: Guardians Unleashed'])
+    map.Game['Arken: Guardians Unleashed'] = await mongo.Game.create({
+      productId: map.Product['Arken: Guardians Unleashed'].id,
       name: 'Arken: Guardians Unleashed',
       key: 'arken-guardians',
     })
-
-  map.Game['Arken: Guardians Unleashed'] = guardiansGame
-  console.log('ee')
 }
 
 async function main() {
-  console.log('aa')
+  console.log('Connecting to Prisma...')
+
   await prisma.$connect()
-  console.log('bb')
+
+  console.log('Connecting to Mongo....')
+
   mongoose = await Mongoose.connect(process.env.MONGO_ENDPOINT, {
     // useNewUrlParser: true,
     // useUnifiedTopology: true,
     retryWrites: false,
   } as any)
-  console.log('cc')
-  const models = [
-    'Application',
-    'Organization',
-    'Account',
-    'Profile',
-    'Video',
-    'VideoScene',
-    'Agent',
-    'Memory',
-    'Conversation',
-    'Data',
-    'Log',
-    'Job',
-    'CryptoToken',
-    'NewsArticle',
-    'Comment',
-    'Question',
-    'Topic',
-    'WorldEvent',
-    'CollectibleCollection',
-    'CollectibleCardBox',
-    'CollectibleCardPack',
-    'CollectibleCard',
-    'Stock',
-    'Asset',
-    'GameItem',
-    'Badge',
-    'BattlePass',
-    'Bounty',
-    'Collection',
-    'Community',
-    'Discussion',
-    'Event',
-    'Exchange',
-    'File',
-    'Idea',
-    'Leaderboard',
-    'AssetLicense',
-    'MarketPair',
-    'Market',
-    'Message',
-    'Offer',
-    'Order',
-    'Product',
-    'Project',
-    'Rating',
-    'GameRealm',
-    'Review',
-    'Role',
-    'GameServer',
-    'Session',
-    'Suggestion',
-    'Tag',
-    'GameTournament',
-    'Trade',
-    'Transaction',
-    'Vote',
-    'Payment',
-    'Referral',
-    'Permission',
-    'Stat',
-    'RecordUpdate',
-    'Form',
-    'FormSubmission',
-    'GameCharacter',
-    'GameTeam',
-    'GameNpc',
-    'Metaverse',
-    'GameSkill',
-    'GameSkillMod',
-    'GameSkillClassification',
-    'GameSkillCondition',
-    'GameSkillStatusEffect',
-    'GameSkillTree',
-    'GameSkillTreeNode',
-    'GameCharacterAbility',
-    'GameCharacterAttribute',
-    'GameCharacterType',
-    'GameItemAttribute',
-    'GameItemMaterial',
-    'GameItemSet',
-    'GameItemSlot',
-    'GameItemRarity',
-    'GameItemType',
-    'GameItemSubType',
-    'GameItemSpecificType',
-    'GameItemAffix',
-    'GameItemRecipe',
-    'GameItemSkin',
-    'GameStash',
-    'GameBiome',
-    'GameBiomeFeature',
-    'GamePlanet',
-    'GameSolarSystem',
-    'GameGalaxy',
-    'GameStar',
-    'GameUniverse',
-    'GameQuest',
-    'GameArea',
-    'GameAreaType',
-    'GameAreaLandmark',
-    'GameAct',
-    'GameCharacterClass',
-    'GameCharacterRace',
-    'GameCharacterGender',
-    'GameCharacterPersonality',
-    'GameCharacterTitle',
-    'GameAreaNameChoice',
-    'GameCharacterNameChoice',
-    'GameCharacterFaction',
-    'GameEra',
-    'GameSeason',
-    'GameLore',
-    'GameEnergy',
-    'GameGuide',
-    'Game',
-    'Validator',
-    'Poll',
-    'ProductUpdate',
-    'Raffle',
-    'RaffleRequirement',
-    'RaffleReward',
-    'RaffleEntry',
-    'Proposal',
-    'Company',
-    'Person',
-    'Omniverse',
-  ]
 
-  for (const model of models) {
+  console.log('Connected to databases.')
+
+  console.log('Creating models...')
+
+  for (const model of Object.keys(schemas)) {
+    map[model] = {}
     mongo[model] = new ModelWrapper(Mongoose.model(model, schemas[model], model))
   }
 
   await createOmniverse()
   await migrateCharacterAttributes()
-
-  await migrateGameGuides() //
+  await migrateGuides() //
   await migrateAssets() //
   await migrateItemAttributes() //
   await migrateItemRecipes() //
@@ -2758,6 +2723,8 @@ async function main() {
   // await migrateProposals()
   // await migrateForms()
   // await aggregateStudios()
+
+  console.log('Done.')
 
   await prisma.$disconnect()
 }

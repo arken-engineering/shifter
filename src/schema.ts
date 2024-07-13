@@ -2,44 +2,48 @@ import mongoose from 'mongoose'
 
 const { Schema } = mongoose
 
-export const Organization = new Schema(
-  {
-    name: { type: String, required: true },
-    description: { type: String },
-    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    data: { type: Object, default: {} },
-    meta: { type: Object, default: {} },
-    createdDate: { type: Date, default: Date.now },
-    updatedDate: { type: Date },
-    deletedDate: { type: Date },
-  },
-  {
-    collection: 'Organization',
-    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-  }
-)
+// export const Organization = new Schema(
+//   {
+//     name: { type: String, required: true },
+//     description: { type: String },
+//     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
+//     data: { type: Object, default: {} },
+//     meta: { type: Object, default: {} },
+//     createdDate: { type: Date, default: Date.now },
+//     updatedDate: { type: Date },
+//     deletedDate: { type: Date },
+//   },
+//   {
+//     collection: 'Organization',
+//     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
+//   }
+// )
 
-Organization.index({ name: 1 }, { unique: true })
+// Organization.index({ name: 1 }, { unique: true })
 
-Organization.virtual('applications', {
-  ref: 'Application',
-  localField: '_id',
-  foreignField: 'organizationId',
-})
+// Organization.virtual('applications', {
+//   ref: 'Application',
+//   localField: '_id',
+//   foreignField: 'organizationId',
+// })
 
-Organization.virtual('accounts', {
-  ref: 'Account',
-  localField: '_id',
-  foreignField: 'organizationId',
-})
+// Organization.virtual('accounts', {
+//   ref: 'Account',
+//   localField: '_id',
+//   foreignField: 'organizationId',
+// })
 
 export const Account = new Schema(
   {
-    organizationId: {
+    metaverseId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Organization',
+      ref: 'Metaverse',
       required: true,
     },
+    // organizationId: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: 'Organization'
+    // },
     username: { type: String, required: true },
     email: { type: String },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
@@ -52,7 +56,7 @@ export const Account = new Schema(
   { collection: 'User', timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' } }
 )
 
-Account.index({ applicationId: 1, organizationId: 1, username: 1 }, { unique: true })
+Account.index({ metaverseId: 1, username: 1 }, { unique: true })
 
 Account.virtual('profiles', {
   ref: 'Profile',
@@ -62,9 +66,9 @@ Account.virtual('profiles', {
 
 export const Profile = new Schema(
   {
-    organizationId: {
+    metaverseId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Organization',
+      ref: 'Metaverse',
       required: true,
     },
     accountId: { type: Schema.Types.ObjectId, ref: 'Account', required: true },
@@ -94,13 +98,10 @@ export const Profile = new Schema(
 
 export const Application = new Schema(
   {
-    organizationId: {
+    metaverseId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Organization',
-    },
-    omniverseId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Omniverse',
+      ref: 'Metaverse',
+      required: true,
     },
     name: { type: String, required: true },
     description: { type: String },
@@ -263,7 +264,7 @@ Application.virtual('ratings', {
 })
 
 Application.virtual('realms', {
-  ref: 'GameRealm',
+  ref: 'Realm',
   localField: '_id',
   foreignField: 'applicationId',
 })
@@ -281,7 +282,7 @@ Application.virtual('roles', {
 })
 
 Application.virtual('gameServers', {
-  ref: 'GameServer',
+  ref: 'Server',
   localField: '_id',
   foreignField: 'applicationId',
 })
@@ -299,13 +300,7 @@ Application.virtual('tags', {
 })
 
 Application.virtual('tokens', {
-  ref: 'Token',
-  localField: '_id',
-  foreignField: 'applicationId',
-})
-
-Application.virtual('gameTournaments', {
-  ref: 'GameTournament',
+  ref: 'ChainToken',
   localField: '_id',
   foreignField: 'applicationId',
 })
@@ -376,14 +371,8 @@ Application.virtual('forms', {
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacters', {
-  ref: 'GameCharacter',
-  localField: '_id',
-  foreignField: 'applicationId',
-})
-
-Application.virtual('gameTeams', {
-  ref: 'GameTeam',
+Application.virtual('characters', {
+  ref: 'Character',
   localField: '_id',
   foreignField: 'applicationId',
 })
@@ -418,200 +407,210 @@ Application.virtual('senderReferrals', {
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItems', {
-  ref: 'GameItem',
-  localField: '_id',
-  foreignField: 'applicationId',
-})
-
 Application.virtual('chains', {
   ref: 'Chain',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameSkills', {
-  ref: 'GameSkill',
+Application.virtual('characterAbilities', {
+  ref: 'CharacterAbility',
+  localField: '_id',
+  foreignField: 'applicationId',
+})
+Application.virtual('tournaments', {
+  ref: 'Tournament',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterAbilities', {
-  ref: 'GameCharacterAbility',
+Application.virtual('teams', {
+  ref: 'Team',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemRecipes', {
-  ref: 'GameItemRecipe',
+Application.virtual('items', {
+  ref: 'Item',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemSkins', {
-  ref: 'GameItemSkin',
+Application.virtual('skills', {
+  ref: 'Skill',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameStashes', {
-  ref: 'GameStash',
+Application.virtual('itemRecipes', {
+  ref: 'ItemRecipe',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameBiomes', {
-  ref: 'GameBiome',
+Application.virtual('itemSkins', {
+  ref: 'ItemSkin',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gamePlanets', {
-  ref: 'GamePlanet',
+Application.virtual('stashes', {
+  ref: 'Stash',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameSolarSystems', {
-  ref: 'GameSolarSystem',
+Application.virtual('biomes', {
+  ref: 'Biome',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameUniverses', {
-  ref: 'GameUniverse',
+Application.virtual('planets', {
+  ref: 'Planet',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameStars', {
-  ref: 'GameStar',
+Application.virtual('solarSystems', {
+  ref: 'SolarSystem',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameAreas', {
-  ref: 'GameArea',
+Application.virtual('universes', {
+  ref: 'Universe',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameActs', {
-  ref: 'GameAct',
+Application.virtual('stars', {
+  ref: 'Star',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterClasses', {
-  ref: 'GameCharacterClass',
+Application.virtual('areas', {
+  ref: 'Area',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterFactions', {
-  ref: 'GameCharacterFaction',
+Application.virtual('acts', {
+  ref: 'Act',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameEras', {
-  ref: 'GameEra',
+Application.virtual('characterClasses', {
+  ref: 'CharacterClass',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameSeasons', {
-  ref: 'GameSeason',
+Application.virtual('characterFactions', {
+  ref: 'CharacterFaction',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemAttributes', {
-  ref: 'GameItemAttribute',
+Application.virtual('eras', {
+  ref: 'Era',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemMaterials', {
-  ref: 'GameItemMaterial',
+Application.virtual('seasons', {
+  ref: 'Season',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemSets', {
-  ref: 'GameItemSet',
+Application.virtual('itemAttributes', {
+  ref: 'ItemAttribute',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemSlots', {
-  ref: 'GameItemSlot',
+Application.virtual('itemMaterials', {
+  ref: 'ItemMaterial',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemRarities', {
-  ref: 'GameItemRarity',
+Application.virtual('itemSets', {
+  ref: 'ItemSet',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemTypes', {
-  ref: 'GameItemType',
+Application.virtual('itemSlots', {
+  ref: 'ItemSlot',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemSubTypes', {
-  ref: 'GameItemSubType',
+Application.virtual('itemRarities', {
+  ref: 'ItemRarity',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameItemSpecificTypes', {
-  ref: 'GameItemSpecificType',
+Application.virtual('itemTypes', {
+  ref: 'ItemType',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterGenders', {
-  ref: 'GameCharacterGender',
+Application.virtual('itemSubTypes', {
+  ref: 'ItemSubType',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterRaces', {
-  ref: 'GameCharacterRace',
+Application.virtual('itemSpecificTypes', {
+  ref: 'ItemSpecificType',
+  localField: '_id',
+  foreignField: 'applicationId',
+})
+Application.virtual('characterGenders', {
+  ref: 'CharacterGender',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterPersonalities', {
-  ref: 'GameCharacterPersonality',
+Application.virtual('characterRaces', {
+  ref: 'CharacterRace',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterTitles', {
-  ref: 'GameCharacterTitle',
+Application.virtual('characterPersonalities', {
+  ref: 'CharacterPersonality',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameLores', {
-  ref: 'GameLore',
+Application.virtual('characterTitles', {
+  ref: 'CharacterTitle',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameEnergies', {
-  ref: 'GameEnergy',
+Application.virtual('lores', {
+  ref: 'Lore',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameGuides', {
-  ref: 'GameGuide',
+Application.virtual('energies', {
+  ref: 'Energy',
+  localField: '_id',
+  foreignField: 'applicationId',
+})
+
+Application.virtual('guides', {
+  ref: 'Guide',
   localField: '_id',
   foreignField: 'applicationId',
 })
@@ -623,91 +622,91 @@ Application.virtual('achievements', {
 })
 
 Application.virtual('games', {
-  ref: 'Game',
+  ref: '',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameNpcs', {
-  ref: 'GameNpc',
+Application.virtual('npcs', {
+  ref: 'Npc',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterAttributes', {
-  ref: 'GameCharacterAttribute',
+Application.virtual('characterAttributes', {
+  ref: 'CharacterAttribute',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterTypes', {
-  ref: 'GameCharacterType',
+Application.virtual('characterTypes', {
+  ref: 'CharacterType',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameAreaTypes', {
-  ref: 'GameAreaType',
+Application.virtual('areaTypes', {
+  ref: 'AreaType',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameAreaLandmarks', {
-  ref: 'GameAreaLandmark',
+Application.virtual('areaLandmarks', {
+  ref: 'AreaLandmark',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameBiomeFeatures', {
-  ref: 'GameBiomeFeature',
+Application.virtual('biomeFeatures', {
+  ref: 'BiomeFeature',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameSkillMods', {
-  ref: 'GameSkillMod',
+Application.virtual('skillMods', {
+  ref: 'SkillMod',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameSkillClassifications', {
-  ref: 'GameSkillClassification',
+Application.virtual('skillClassifications', {
+  ref: 'SkillClassification',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameSkillConditions', {
-  ref: 'GameSkillCondition',
+Application.virtual('skillConditions', {
+  ref: 'SkillCondition',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameSkillStatusEffects', {
-  ref: 'GameSkillStatusEffect',
+Application.virtual('skillStatusEffects', {
+  ref: 'SkillStatusEffect',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameSkillTrees', {
-  ref: 'GameSkillTree',
+Application.virtual('skillTrees', {
+  ref: 'SkillTree',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameSkillTreeNodes', {
-  ref: 'GameSkillTreeNode',
+Application.virtual('skillTreeNodes', {
+  ref: 'SkillTreeNode',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameAreaNameChoices', {
-  ref: 'GameAreaNameChoice',
+Application.virtual('areaNameChoices', {
+  ref: 'AreaNameChoice',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameCharacterNameChoices', {
-  ref: 'GameCharacterNameChoice',
+Application.virtual('characterNameChoices', {
+  ref: 'CharacterNameChoice',
   localField: '_id',
   foreignField: 'applicationId',
 })
@@ -730,14 +729,14 @@ Application.virtual('polls', {
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameGalaxies', {
-  ref: 'GameGalaxy',
+Application.virtual('galaxies', {
+  ref: 'Galaxy',
   localField: '_id',
   foreignField: 'applicationId',
 })
 
-Application.virtual('gameQuests', {
-  ref: 'GameQuest',
+Application.virtual('quests', {
+  ref: 'Quest',
   localField: '_id',
   foreignField: 'applicationId',
 })
@@ -895,7 +894,7 @@ export const Data = new Schema(
     mod: { type: String, required: true },
     key: { type: String, required: true },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -912,7 +911,7 @@ export const Log = new Schema(
     messages: { type: Array },
     tags: { type: Array },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -941,7 +940,7 @@ export const Job = new Schema(
     startDate: { type: Date },
     expireDate: { type: Date },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -950,43 +949,6 @@ export const Job = new Schema(
   { collection: 'Job', timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' } }
 )
 Job.index({ applicationId: 1, mod: 1, key: 1 }, { unique: true })
-
-export const CryptoToken = new Schema(
-  {
-    applicationId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Application',
-      required: true,
-    },
-    rank: { type: Number, min: 0 },
-    name: { type: String, required: true },
-    price: { type: Number, min: 0 },
-    hourChange: { type: Number },
-    dayChange: { type: Number },
-    weekChange: { type: Number },
-    marketCap: { type: Number, min: 0 },
-    volume: { type: Number, min: 0 },
-    symbol: { type: String, required: true },
-    circulatingSupply: { type: Number, min: 0 },
-    cmcLink: { type: String },
-    movementDown: { type: Number, min: 0 },
-    movementUp: { type: Number, min: 0 },
-    enteredTop100: { type: Number, min: 0 },
-    exitedTop100: { type: Number, min: 0 },
-    largeMoveDown: { type: Number, min: 0 },
-    data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
-    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    createdDate: { type: Date, default: Date.now },
-    updatedDate: { type: Date },
-    deletedDate: { type: Date },
-  },
-  {
-    collection: 'CryptoToken',
-    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-  }
-)
-CryptoToken.index({ applicationId: 1, symbol: 1 }, { unique: true })
 
 export const NewsArticle = new Schema(
   {
@@ -1004,7 +966,7 @@ export const NewsArticle = new Schema(
     },
     href: { type: String, required: true },
     source: { type: String, required: true },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -1033,14 +995,14 @@ export const Comment = new Schema(
     entityModel: {
       type: String,
       required: true,
-      enum: ['NewsArticle', 'CryptoToken'],
+      enum: ['NewsArticle', 'ChainToken'],
     },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
     deletedDate: { type: Date },
 
     text: { type: String, required: true },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
     createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1070,7 +1032,7 @@ export const Question = new Schema(
     popularity: { type: Number },
     topics: { type: Array },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -1097,7 +1059,7 @@ export const Topic = new Schema(
     popularity: { type: Number },
     tags: { type: Array },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -1124,7 +1086,7 @@ export const WorldEvent = new Schema(
     importance: { type: Number },
     tags: { type: Array },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -1153,7 +1115,7 @@ export const CollectibleCollection = new Schema(
     hype: { type: Number },
     value: { type: Number },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -1189,7 +1151,7 @@ export const CollectibleCardBox = new Schema(
       trim: true,
     },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -1242,7 +1204,7 @@ export const CollectibleCardPack = new Schema(
     category: { type: String },
     year: { type: Number },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -1295,7 +1257,7 @@ export const CollectibleCard = new Schema(
     category: { type: String },
     year: { type: Number },
     data: { type: Object, default: {} },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date },
@@ -1316,7 +1278,7 @@ export const Stock = new Schema(
     },
     rank: { type: Number, min: 0 },
     name: { type: String, required: true },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     price: { type: Number, min: 0 },
     hourChange: { type: Number },
@@ -1337,13 +1299,13 @@ export const Chain = new Schema(
   {
     name: { type: String, required: true, maxlength: 100 },
     key: { type: String, maxlength: 100 },
-    description: { type: String, required: true },
-    content: { type: String, required: true },
-    meta: { type: Schema.Types.Mixed, required: true },
+    description: { type: String },
+    content: { type: String },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    applicationId: {
+    metaverseId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Application',
+      ref: 'Metaverse',
       required: true,
     },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1391,7 +1353,7 @@ export const ChainContract = new Schema({
   key: { type: String, maxlength: 100 },
   description: { type: String, required: true },
   content: { type: String, required: true },
-  meta: { type: Schema.Types.Mixed, required: true },
+  meta: { type: Object, default: {} },
   status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
   applicationId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -1409,39 +1371,60 @@ export const ChainContract = new Schema({
   standard: { type: String, maxlength: 100 },
 })
 
-export const ChainToken = new Schema({
-  name: { type: String, required: true, maxlength: 100 },
-  key: { type: String, maxlength: 100 },
-  description: { type: String, required: true },
-  content: { type: String, required: true },
-  meta: { type: Schema.Types.Mixed, required: true },
-  status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-  applicationId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Application',
-    required: true,
+export const ChainToken = new Schema(
+  {
+    applicationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Application',
+      required: true,
+    },
+    rank: { type: Number, min: 0 },
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    content: { type: String, required: true },
+    type: { type: String, maxlength: 100 },
+    standard: { type: String, maxlength: 100 },
+    price: { type: Number, min: 0 },
+    hourChange: { type: Number },
+    dayChange: { type: Number },
+    weekChange: { type: Number },
+    marketCap: { type: Number, min: 0 },
+    volume: { type: Number, min: 0 },
+    symbol: { type: String, required: true },
+    circulatingSupply: { type: Number, min: 0 },
+    cmcLink: { type: String },
+    movementDown: { type: Number, min: 0 },
+    movementUp: { type: Number, min: 0 },
+    enteredTop100: { type: Number, min: 0 },
+    exitedTop100: { type: Number, min: 0 },
+    largeMoveDown: { type: Number, min: 0 },
+    data: { type: Object, default: {} },
+    meta: { type: Object, default: {} },
+    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
+    createdDate: { type: Date, default: Date.now },
+    updatedDate: { type: Date },
+    deletedDate: { type: Date },
   },
-  ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
-  createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-  editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-  deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date },
-  deletedAt: { type: Date },
-  type: { type: String, maxlength: 100 },
-  standard: { type: String, maxlength: 100 },
-})
+  {
+    collection: 'ChainToken',
+    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
+  }
+)
+ChainToken.index({ applicationId: 1, symbol: 1 }, { unique: true })
 
-// Schema for Asset
 export const Asset = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     uri: { type: String },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
-    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
+    applicationId: { type: Schema.Types.ObjectId, ref: 'Application' },
+    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse', required: true },
     chainId: { type: Schema.Types.ObjectId, ref: 'Chain' },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
     createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1456,7 +1439,7 @@ export const Asset = new Schema(
 
     license: { type: Schema.Types.ObjectId, ref: 'AssetLicense' },
     chain: { type: Schema.Types.ObjectId, ref: 'Chain' },
-    items: [{ type: Schema.Types.ObjectId, ref: 'GameItem' }],
+    items: [{ type: Schema.Types.ObjectId, ref: 'Item' }],
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
@@ -1470,13 +1453,12 @@ Asset.index({ name: 1 })
 Asset.index({ status: 1 })
 Asset.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for GameItem
-export const GameItem = new Schema(
+export const Item = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     token: { type: String, maxlength: 500 },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     assetId: { type: Schema.Types.ObjectId, ref: 'Asset', required: true },
     metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
@@ -1489,30 +1471,29 @@ export const GameItem = new Schema(
     deletedDate: { type: Date },
     chain: { type: Schema.Types.ObjectId, ref: 'Chain' },
     asset: { type: Schema.Types.ObjectId, ref: 'Asset' },
-    itemsOnProfiles: [{ type: Schema.Types.ObjectId, ref: 'GameItemsOnProfiles' }],
+    itemsOnProfiles: [{ type: Schema.Types.ObjectId, ref: 'ItemsOnProfiles' }],
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItem',
+    collection: 'Item',
   }
 )
 
-GameItem.index({ deletedDate: 1 })
-GameItem.index({ key: 1 })
-GameItem.index({ name: 1 })
-GameItem.index({ status: 1 })
-GameItem.index({ createdDate: 1, updatedDate: 1 })
+Item.index({ deletedDate: 1 })
+Item.index({ key: 1 })
+Item.index({ name: 1 })
+Item.index({ status: 1 })
+Item.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for GameItem
-export const GameItemTransmute = new Schema(
+export const ItemTransmute = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     token: { type: String, maxlength: 500 },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     assetId: { type: Schema.Types.ObjectId, ref: 'Asset', required: true },
-    gameItemId: { type: Schema.Types.ObjectId, ref: 'GameItem', required: true },
+    gameItemId: { type: Schema.Types.ObjectId, ref: 'Item', required: true },
     metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
     createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1525,35 +1506,34 @@ export const GameItemTransmute = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemTransmute',
+    collection: 'ItemTransmute',
   }
 )
 
-GameItemTransmute.index({ deletedDate: 1 })
-GameItemTransmute.index({ key: 1 })
-GameItemTransmute.index({ name: 1 })
-GameItemTransmute.index({ status: 1 })
-GameItemTransmute.index({ createdDate: 1, updatedDate: 1 })
+ItemTransmute.index({ deletedDate: 1 })
+ItemTransmute.index({ key: 1 })
+ItemTransmute.index({ name: 1 })
+ItemTransmute.index({ status: 1 })
+ItemTransmute.index({ createdDate: 1, updatedDate: 1 })
 
-GameItemTransmute.virtual('item', {
-  ref: 'GameItem',
+ItemTransmute.virtual('item', {
+  ref: 'Item',
   localField: 'gameItemId',
   foreignField: '_id',
 })
 
-GameItemTransmute.virtual('asset', {
+ItemTransmute.virtual('asset', {
   ref: 'Asset',
   localField: 'assetId',
   foreignField: '_id',
 })
 
-// Schema for Badge
 export const Badge = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1576,13 +1556,12 @@ Badge.index({ name: 1 })
 Badge.index({ status: 1 })
 Badge.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for BattlePass
 export const BattlePass = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     description: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1605,13 +1584,12 @@ BattlePass.index({ name: 1 })
 BattlePass.index({ status: 1 })
 BattlePass.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Bounty
 export const Bounty = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     description: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1639,7 +1617,7 @@ export const Collection = new Schema(
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1662,13 +1640,12 @@ Collection.index({ name: 1 })
 Collection.index({ status: 1 })
 Collection.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Community
 export const Community = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1694,13 +1671,12 @@ Community.index({ name: 1 })
 Community.index({ status: 1 })
 Community.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Discussion
 export const Discussion = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     content: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
@@ -1726,13 +1702,12 @@ Discussion.index({ name: 1 })
 Discussion.index({ status: 1 })
 Discussion.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Event
 export const Event = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1755,13 +1730,12 @@ Event.index({ name: 1 })
 Event.index({ status: 1 })
 Event.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Exchange
 export const Exchange = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1784,13 +1758,12 @@ Exchange.index({ name: 1 })
 Exchange.index({ status: 1 })
 Exchange.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for File
 export const File = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1815,13 +1788,12 @@ File.index({ name: 1 })
 File.index({ status: 1 })
 File.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Idea
 export const Idea = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
@@ -1847,13 +1819,12 @@ Idea.index({ name: 1 })
 Idea.index({ status: 1 })
 Idea.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Leaderboard
 export const Leaderboard = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1877,13 +1848,12 @@ Leaderboard.index({ name: 1 })
 Leaderboard.index({ status: 1 })
 Leaderboard.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for AssetLicense
 export const AssetLicense = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1907,13 +1877,12 @@ AssetLicense.index({ name: 1 })
 AssetLicense.index({ status: 1 })
 AssetLicense.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for MarketPair
 export const MarketPair = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1936,13 +1905,12 @@ MarketPair.index({ name: 1 })
 MarketPair.index({ status: 1 })
 MarketPair.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Market
 export const Market = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -1965,13 +1933,12 @@ Market.index({ name: 1 })
 Market.index({ status: 1 })
 Market.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Message
 export const Message = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     content: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
@@ -1999,13 +1966,12 @@ Message.index({ name: 1 })
 Message.index({ status: 1 })
 Message.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Offer
 export const Offer = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
@@ -2028,13 +1994,12 @@ Offer.index({ name: 1 })
 Offer.index({ status: 1 })
 Offer.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Order
 export const Order = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
     value: { type: String },
-    meta: { type: Schema.Types.Mixed, required: true },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
@@ -2057,7 +2022,6 @@ Order.index({ name: 1 })
 Order.index({ status: 1 })
 Order.index({ createdDate: 1, updatedDate: 1 })
 
-// Schema for Product
 export const Product = new Schema(
   {
     name: { type: String, required: true, maxlength: 100 },
@@ -2065,7 +2029,7 @@ export const Product = new Schema(
     shortDescription: { type: String, maxlength: 300 },
     description: { type: String, maxlength: 2000 },
     content: { type: String },
-    meta: { type: Schema.Types.Mixed },
+    meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application' },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -2082,7 +2046,7 @@ export const Product = new Schema(
     community: { type: Schema.Types.ObjectId, ref: 'Community' },
     projects: [{ type: Schema.Types.ObjectId, ref: 'Project' }],
     leaderboards: [{ type: Schema.Types.ObjectId, ref: 'Leaderboard' }],
-    games: [{ type: Schema.Types.ObjectId, ref: 'Game' }],
+    games: [{ type: Schema.Types.ObjectId, ref: '' }],
     productUpdates: [{ type: Schema.Types.ObjectId, ref: 'ProductUpdate' }],
   },
   {
@@ -2154,7 +2118,7 @@ export const Rating = new Schema(
   }
 )
 
-export const GameRealm = new Schema(
+export const Realm = new Schema(
   {
     name: { type: String, maxlength: 100 },
     key: { type: String, maxlength: 100 },
@@ -2205,7 +2169,11 @@ export const Role = new Schema(
     value: { type: String },
     meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
+    metaverseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Metaverse',
+      required: true,
+    },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
     createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
     editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -2222,7 +2190,7 @@ export const Role = new Schema(
   }
 )
 
-export const GameServer = new Schema(
+export const Server = new Schema(
   {
     name: { type: String, required: true, maxlength: 100 },
     key: { type: String, maxlength: 100 },
@@ -2299,7 +2267,7 @@ export const Tag = new Schema(
   }
 )
 
-export const GameTournament = new Schema(
+export const Tournament = new Schema(
   {
     name: { type: String, required: true, maxlength: 100 },
     key: { type: String, maxlength: 100 },
@@ -2536,7 +2504,7 @@ export const FormSubmission = new Schema(
   }
 )
 
-export const GameCharacter = new Schema(
+export const Character = new Schema(
   {
     metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile', required: true },
@@ -2551,16 +2519,16 @@ export const GameCharacter = new Schema(
     name: { type: String, required: true },
     meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    charactersOnTeams: [{ type: Schema.Types.ObjectId, ref: 'GameCharactersOnTeams' }],
-    npcs: [{ type: Schema.Types.ObjectId, ref: 'GameNpc' }],
+    charactersOnTeams: [{ type: Schema.Types.ObjectId, ref: 'CharactersOnTeams' }],
+    npcs: [{ type: Schema.Types.ObjectId, ref: 'Npc' }],
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacter',
+    collection: 'Character',
   }
 )
 
-export const GameTeam = new Schema(
+export const Team = new Schema(
   {
     metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
     ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
@@ -2576,15 +2544,15 @@ export const GameTeam = new Schema(
     description: { type: String },
     meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    charactersOnTeams: [{ type: Schema.Types.ObjectId, ref: 'GameCharactersOnTeams' }],
+    charactersOnTeams: [{ type: Schema.Types.ObjectId, ref: 'CharactersOnTeams' }],
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameTeam',
+    collection: 'Team',
   }
 )
 
-export const GameNpc = new Schema(
+export const Npc = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2600,13 +2568,13 @@ export const GameNpc = new Schema(
     deletedDate: { type: Date },
     meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    characterRace: { type: Schema.Types.ObjectId, ref: 'GameCharacterRace' },
-    gameCharacter: { type: Schema.Types.ObjectId, ref: 'GameCharacter' },
-    gameCharacterId: { type: String },
+    characterRace: { type: Schema.Types.ObjectId, ref: 'CharacterRace' },
+    character: { type: Schema.Types.ObjectId, ref: 'Character' },
+    characterId: { type: String },
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameNpc',
+    collection: 'Npc',
   }
 )
 
@@ -2656,7 +2624,7 @@ export const Omniverse = new Schema(
   }
 )
 
-export const GameSkill = new Schema(
+export const Skill = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2674,11 +2642,11 @@ export const GameSkill = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameSkill',
+    collection: 'Skill',
   }
 )
 
-export const GameSkillMod = new Schema(
+export const SkillMod = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2696,11 +2664,11 @@ export const GameSkillMod = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameSkillMod',
+    collection: 'SkillMod',
   }
 )
 
-export const GameSkillClassification = new Schema(
+export const SkillClassification = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2718,11 +2686,11 @@ export const GameSkillClassification = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameSkillClassification',
+    collection: 'SkillClassification',
   }
 )
 
-export const GameSkillCondition = new Schema(
+export const SkillCondition = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2740,11 +2708,11 @@ export const GameSkillCondition = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameSkillCondition',
+    collection: 'SkillCondition',
   }
 )
 
-export const GameSkillStatusEffect = new Schema(
+export const SkillStatusEffect = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2762,11 +2730,11 @@ export const GameSkillStatusEffect = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameSkillStatusEffect',
+    collection: 'SkillStatusEffect',
   }
 )
 
-export const GameSkillTree = new Schema(
+export const SkillTree = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2784,11 +2752,11 @@ export const GameSkillTree = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameSkillTree',
+    collection: 'SkillTree',
   }
 )
 
-export const GameSkillTreeNode = new Schema(
+export const SkillTreeNode = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2806,11 +2774,11 @@ export const GameSkillTreeNode = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameSkillTreeNode',
+    collection: 'SkillTreeNode',
   }
 )
 
-export const GameCharacterAbility = new Schema(
+export const CharacterAbility = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2828,11 +2796,11 @@ export const GameCharacterAbility = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacterAbility',
+    collection: 'CharacterAbility',
   }
 )
 
-export const GameCharacterAttribute = new Schema(
+export const CharacterAttribute = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2850,11 +2818,11 @@ export const GameCharacterAttribute = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacterAttribute',
+    collection: 'CharacterAttribute',
   }
 )
 
-export const GameCharacterType = new Schema(
+export const CharacterType = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2872,11 +2840,11 @@ export const GameCharacterType = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacterType',
+    collection: 'CharacterType',
   }
 )
 
-export const GameItemAttribute = new Schema(
+export const ItemAttribute = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2894,11 +2862,11 @@ export const GameItemAttribute = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemAttribute',
+    collection: 'ItemAttribute',
   }
 )
 
-export const GameItemMaterial = new Schema(
+export const ItemMaterial = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2916,11 +2884,11 @@ export const GameItemMaterial = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemMaterial',
+    collection: 'ItemMaterial',
   }
 )
 
-export const GameItemSet = new Schema(
+export const ItemSet = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2938,11 +2906,11 @@ export const GameItemSet = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemSet',
+    collection: 'ItemSet',
   }
 )
 
-export const GameItemSlot = new Schema(
+export const ItemSlot = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2960,11 +2928,11 @@ export const GameItemSlot = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemSlot',
+    collection: 'ItemSlot',
   }
 )
 
-export const GameItemRarity = new Schema(
+export const ItemRarity = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -2982,11 +2950,11 @@ export const GameItemRarity = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemRarity',
+    collection: 'ItemRarity',
   }
 )
 
-export const GameItemType = new Schema(
+export const ItemType = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3004,11 +2972,11 @@ export const GameItemType = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemType',
+    collection: 'ItemType',
   }
 )
 
-export const GameItemSubType = new Schema(
+export const ItemSubType = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3026,11 +2994,11 @@ export const GameItemSubType = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemSubType',
+    collection: 'ItemSubType',
   }
 )
 
-export const GameItemSpecificType = new Schema(
+export const ItemSpecificType = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3048,11 +3016,11 @@ export const GameItemSpecificType = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemSpecificType',
+    collection: 'ItemSpecificType',
   }
 )
 
-export const GameItemAffix = new Schema(
+export const ItemAffix = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3070,11 +3038,11 @@ export const GameItemAffix = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemAffix',
+    collection: 'ItemAffix',
   }
 )
 
-export const GameItemRecipe = new Schema(
+export const ItemRecipe = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3092,11 +3060,11 @@ export const GameItemRecipe = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemRecipe',
+    collection: 'ItemRecipe',
   }
 )
 
-export const GameItemSkin = new Schema(
+export const ItemSkin = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3113,11 +3081,11 @@ export const GameItemSkin = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameItemSkin',
+    collection: 'ItemSkin',
   }
 )
 
-export const GameStash = new Schema(
+export const Stash = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3134,33 +3102,11 @@ export const GameStash = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameStash',
+    collection: 'Stash',
   }
 )
 
-export const GameBiome = new Schema(
-  {
-    key: { type: String, required: true },
-    name: { type: String, required: true },
-    description: { type: String },
-    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
-    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdDate: { type: Date, default: Date.now },
-    updatedDate: { type: Date },
-    deletedDate: { type: Date },
-    meta: { type: Object, default: {} },
-    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-  },
-  {
-    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameBiome',
-  }
-)
-
-export const GameBiomeFeature = new Schema(
+export const Biome = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3178,11 +3124,11 @@ export const GameBiomeFeature = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameBiomeFeature',
+    collection: 'Biome',
   }
 )
 
-export const GamePlanet = new Schema(
+export const BiomeFeature = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3200,11 +3146,80 @@ export const GamePlanet = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GamePlanet',
+    collection: 'BiomeFeature',
   }
 )
 
-export const GameSolarSystem = new Schema(
+export const Planet = new Schema(
+  {
+    key: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String },
+    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
+    solarSystemId: { type: Schema.Types.ObjectId, ref: 'SolarSystem' },
+    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdDate: { type: Date, default: Date.now },
+    updatedDate: { type: Date },
+    deletedDate: { type: Date },
+    meta: { type: Object, default: {} },
+    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
+  },
+  {
+    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
+    collection: 'Planet',
+  }
+)
+
+export const SolarSystem = new Schema(
+  {
+    key: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String },
+    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
+    galaxyId: { type: Schema.Types.ObjectId, ref: 'Galaxy' },
+    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdDate: { type: Date, default: Date.now },
+    updatedDate: { type: Date },
+    deletedDate: { type: Date },
+    meta: { type: Object, default: {} },
+    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
+  },
+  {
+    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
+    collection: 'SolarSystem',
+  }
+)
+
+export const Galaxy = new Schema(
+  {
+    key: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String },
+    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
+    universeId: { type: Schema.Types.ObjectId, ref: 'Universe' },
+    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdDate: { type: Date, default: Date.now },
+    updatedDate: { type: Date },
+    deletedDate: { type: Date },
+    meta: { type: Object, default: {} },
+    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
+  },
+  {
+    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
+    collection: 'Galaxy',
+  }
+)
+
+export const Star = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3222,55 +3237,11 @@ export const GameSolarSystem = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameSolarSystem',
+    collection: 'Star',
   }
 )
 
-export const GameGalaxy = new Schema(
-  {
-    key: { type: String, required: true },
-    name: { type: String, required: true },
-    description: { type: String },
-    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
-    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdDate: { type: Date, default: Date.now },
-    updatedDate: { type: Date },
-    deletedDate: { type: Date },
-    meta: { type: Object, default: {} },
-    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-  },
-  {
-    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameGalaxy',
-  }
-)
-
-export const GameStar = new Schema(
-  {
-    key: { type: String, required: true },
-    name: { type: String, required: true },
-    description: { type: String },
-    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
-    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdDate: { type: Date, default: Date.now },
-    updatedDate: { type: Date },
-    deletedDate: { type: Date },
-    meta: { type: Object, default: {} },
-    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-  },
-  {
-    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameStar',
-  }
-)
-
-export const GameUniverse = new Schema(
+export const Universe = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3287,34 +3258,11 @@ export const GameUniverse = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameUniverse',
+    collection: 'Universe',
   }
 )
 
-export const GameQuest = new Schema(
-  {
-    key: { type: String, required: true },
-    name: { type: String, required: true },
-    description: { type: String },
-    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
-    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdDate: { type: Date, default: Date.now },
-    updatedDate: { type: Date },
-    deletedDate: { type: Date },
-    meta: { type: Object, default: {} },
-    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    type: { type: String, default: 'zone' },
-  },
-  {
-    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameQuest',
-  }
-)
-
-export const GameArea = new Schema(
+export const Quest = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3330,15 +3278,38 @@ export const GameArea = new Schema(
     meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
     type: { type: String, default: 'zone' },
-    landmarks: [{ type: Schema.Types.ObjectId, ref: 'GameAreaLandmark' }],
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameArea',
+    collection: 'Quest',
   }
 )
 
-export const GameAreaType = new Schema(
+export const Area = new Schema(
+  {
+    key: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String },
+    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
+    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdDate: { type: Date, default: Date.now },
+    updatedDate: { type: Date },
+    deletedDate: { type: Date },
+    meta: { type: Object, default: {} },
+    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
+    type: { type: String, default: 'zone' },
+    landmarks: [{ type: Schema.Types.ObjectId, ref: 'AreaLandmark' }],
+  },
+  {
+    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
+    collection: 'Area',
+  }
+)
+
+export const AreaType = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3356,11 +3327,11 @@ export const GameAreaType = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameAreaType',
+    collection: 'AreaType',
   }
 )
 
-export const GameAreaLandmark = new Schema(
+export const AreaLandmark = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3376,15 +3347,15 @@ export const GameAreaLandmark = new Schema(
     deletedDate: { type: Date },
     meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    area: { type: Schema.Types.ObjectId, ref: 'GameArea' },
+    area: { type: Schema.Types.ObjectId, ref: 'Area' },
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameAreaLandmark',
+    collection: 'AreaLandmark',
   }
 )
 
-export const GameAct = new Schema(
+export const Act = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3402,11 +3373,11 @@ export const GameAct = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameAct',
+    collection: 'Act',
   }
 )
 
-export const GameCharacterClass = new Schema(
+export const CharacterClass = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3424,11 +3395,11 @@ export const GameCharacterClass = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacterClass',
+    collection: 'CharacterClass',
   }
 )
 
-export const GameCharacterRace = new Schema(
+export const CharacterRace = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3443,37 +3414,15 @@ export const GameCharacterRace = new Schema(
     deletedDate: { type: Date },
     meta: { type: Object, default: {} },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-    GameNpc: [{ type: Schema.Types.ObjectId, ref: 'GameNpc' }],
+    npcs: [{ type: Schema.Types.ObjectId, ref: 'Npc' }],
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacterRace',
+    collection: 'CharacterRace',
   }
 )
 
-export const GameCharacterGender = new Schema(
-  {
-    key: { type: String, required: true },
-    name: { type: String, required: true },
-    description: { type: String },
-    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
-    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
-    createdDate: { type: Date, default: Date.now },
-    updatedDate: { type: Date },
-    deletedDate: { type: Date },
-    meta: { type: Object, default: {} },
-    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
-  },
-  {
-    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacterGender',
-  }
-)
-
-export const GameCharacterPersonality = new Schema(
+export const CharacterGender = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3491,11 +3440,11 @@ export const GameCharacterPersonality = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacterPersonality',
+    collection: 'CharacterGender',
   }
 )
 
-export const GameCharacterTitle = new Schema(
+export const CharacterPersonality = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3513,11 +3462,11 @@ export const GameCharacterTitle = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacterTitle',
+    collection: 'CharacterPersonality',
   }
 )
 
-export const GameAreaNameChoice = new Schema(
+export const CharacterTitle = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3535,11 +3484,11 @@ export const GameAreaNameChoice = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameAreaNameChoice',
+    collection: 'CharacterTitle',
   }
 )
 
-export const GameCharacterNameChoice = new Schema(
+export const AreaNameChoice = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3557,11 +3506,11 @@ export const GameCharacterNameChoice = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameCharacterNameChoice',
+    collection: 'AreaNameChoice',
   }
 )
 
-export const GameCharacterFaction = new Schema(
+export const CharacterNameChoice = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3579,11 +3528,11 @@ export const GameCharacterFaction = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameFaction',
+    collection: 'CharacterNameChoice',
   }
 )
 
-export const GameEra = new Schema(
+export const CharacterFaction = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3601,11 +3550,11 @@ export const GameEra = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameEra',
+    collection: 'Faction',
   }
 )
 
-export const GameSeason = new Schema(
+export const Era = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3623,11 +3572,33 @@ export const GameSeason = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameSeason',
+    collection: 'Era',
   }
 )
 
-export const GameLore = new Schema(
+export const Season = new Schema(
+  {
+    key: { type: String, required: true },
+    name: { type: String, required: true },
+    description: { type: String },
+    metaverseId: { type: Schema.Types.ObjectId, ref: 'Metaverse' },
+    ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    createdDate: { type: Date, default: Date.now },
+    updatedDate: { type: Date },
+    deletedDate: { type: Date },
+    meta: { type: Object, default: {} },
+    status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
+  },
+  {
+    timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
+    collection: 'Season',
+  }
+)
+
+export const Lore = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3646,11 +3617,11 @@ export const GameLore = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameLore',
+    collection: 'Lore',
   }
 )
 
-export const GameEnergy = new Schema(
+export const Energy = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3668,11 +3639,11 @@ export const GameEnergy = new Schema(
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameEnergy',
+    collection: 'Energy',
   }
 )
 
-export const GameGuide = new Schema(
+export const Guide = new Schema(
   {
     key: { type: String, required: true },
     name: { type: String, required: true },
@@ -3688,12 +3659,12 @@ export const GameGuide = new Schema(
     updatedDate: { type: Date },
     deletedDate: { type: Date },
     meta: { type: Object, default: {} },
-    attachments: { type: Schema.Type.Mixed, default: [] },
+    attachments: { type: Schema.Types.Mixed, default: [] },
     status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
   },
   {
     timestamps: { createdAt: 'createdDate', updatedAt: 'updatedDate' },
-    collection: 'GameGuide',
+    collection: 'Guide',
   }
 )
 
