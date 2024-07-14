@@ -216,7 +216,9 @@ async function migrateAccounts() {
 
   for (const account of accounts) {
     // Check if the account already exists in MongoDB
-    const existingAccount = await mongo.Account.findOne({ key: account.key })
+    const existingAccount = await mongo.Account.findOne({
+      $or: [{ key: account.lastName }, { username: account.lastName }],
+    })
 
     if (existingAccount) {
       console.log(`Account with key ${account.key} already exists.`)
@@ -226,13 +228,13 @@ async function migrateAccounts() {
 
     // Insert the account into MongoDB
     const newAccount = await mongo.Account.create({
-      name: account.name,
-      key: account.key,
+      metaverseId: map.Metaverse.Arken.id,
+      username: account.lastName,
+      key: account.lastName,
       value: account.value,
       meta: account.meta,
-      status: account.status,
-      createdAt: account.createdAt,
-      email: account.email,
+      status: 'Pending',
+      email: account.email.replace('rune.farm', 'arken.gg'),
       firstName: account.firstName,
       lastName: account.lastName,
       address: account.address,
@@ -244,8 +246,6 @@ async function migrateAccounts() {
 
     console.log(`Inserted account with ID: ${newAccount._id}`)
   }
-
-  console.log('Migration completed.')
 }
 
 // async function migrateAccounts() {
@@ -662,8 +662,6 @@ async function migrateTeams() {
 
 //     console.log(`Inserted achievement with key: ${item.key}`)
 //   }
-
-//   console.log('Migration completed.')
 // }
 
 async function migrateAchievements() {
@@ -712,21 +710,19 @@ async function migrateAchievements() {
 
     console.log(`Inserted achievement with key: ${item.key}`)
   }
-
-  console.log('Migration completed.')
 }
 
 async function migrateAreas() {
   for (const item of areas) {
     // Check if the area already exists in MongoDB
-    const existingArea = await mongo.GameArea.findOne({ name: item.name })
+    const existingArea = await mongo.Area.findOne({ name: item.name })
     if (existingArea) {
       console.log(`Area with name ${item.name} already exists.`)
       continue
     }
 
     // Insert the area into MongoDB
-    const newArea = await mongo.GameArea.create({
+    const newArea = await mongo.Area.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -747,8 +743,6 @@ async function migrateAreas() {
     // "itemMaterials": [1, 3, 4, 5, 9, 14, 21, 22, 23, 37],
     // "biomes": [6, 13, 14, 15, 22, 24, 27, 58, 59]
   }
-
-  console.log('Migration completed.')
 }
 
 async function migrateCharacterAttributes() {
@@ -2655,71 +2649,71 @@ async function main() {
     mongo[model] = new ModelWrapper(Mongoose.model(model, schemas[model], model))
   }
 
-  await createOmniverse()
-  await migrateCharacterAttributes()
+  await createOmniverse() //
+  await migrateCharacterAttributes() //
   await migrateGuides() //
   await migrateAssets() //
   await migrateItemAttributes() //
   await migrateItemRecipes() //
   await migrateItemMaterials() //
-  // // await migrateItemAttributeParams() // forget about this?
-  // // await migrateItemParams() // forget about this?
-  // await migrateItemSpecificTypes() //
-  // await migrateItemSubTypes() //
-  // await migrateItemTypes() //
+  // await migrateItemAttributeParams() // forget about this?
+  // await migrateItemParams() // forget about this?
+  await migrateItemSpecificTypes() //
+  await migrateItemSubTypes() //
+  await migrateItemTypes() //
   // await migrateItemAffixes()
-  // await migrateItemSlots() //
-  // await migrateItemRarities() //
-  // await migrateItemSets() //
+  await migrateItemSlots() //
+  await migrateItemRarities() //
+  await migrateItemSets() //
   // await migrateItemTransmuteRules() // fill this in and do later
-  // await migrateSkills() //
-  // await migrateSkillMods() //
-  // await migrateSkillClassifications() //
-  // await migrateSkillConditions() //
-  // // await migrateSkillConditionParams() // dont need??
-  // await migrateSkillStatusEffects() //
-  // await migrateSkillTrees() // fill in and do again later
-  // await migrateSkillTreeNodes() //
-  // await migrateCharacterGuilds() //
-  // await migrateCharacterRaces() //
-  // await migrateCharacterGenders() //
-  // await migrateCharacterFactions() //
-  // await migrateCharacterClasses() //
-  // await migrateCharacters() //
-  // await migrateCharacterTypes() //
-  // await migrateCharacterAttributes() //
+  await migrateSkills() //
+  await migrateSkillMods() //
+  await migrateSkillClassifications() //
+  await migrateSkillConditions() //
+  // await migrateSkillConditionParams() // dont need??
+  await migrateSkillStatusEffects() //
+  await migrateSkillTrees() // fill in and do again later
+  await migrateSkillTreeNodes()
+  // await migrateCharacterGuilds()
+  await migrateCharacterRaces()
+  // await migrateCharacterGenders()
+  await migrateCharacterFactions()
+  await migrateCharacterClasses()
+  // await migrateCharacters()
+  await migrateCharacterTypes()
+  await migrateCharacterAttributes()
   // await migrateCharacterStats() // merged into attributes
-  // await migrateCharacterTitles() //
+  await migrateCharacterTitles()
   // await migrateCharacterSpawnRules() // unused
   // await migrateCharacterFightingStyles() // unused
-  // await migrateCharacterNameChoices() //
+  await migrateCharacterNameChoices()
   // await migrateCharacterMovementStasuses() // unused
   // await migrateCharacterPersonalities() // unused
-  // await migrateAreas() //
-  // // await migrateAreaTypes() // not sure
-  // await migrateAreaNameChoices() //
-  // await migrateEnergies() //
-  // await migrateLores() //
-  // // await migrateHistoricalRecords() // none
-  // await migrateNpcs() //
-  // await migrateActs() //
-  // await migrateEras() //
-  // await migrateAreaLandmarks() //
-  // await migrateAchievements() //
-  // await migrateBiomeFeatures() //
-  // await migrateBiomes() // needs to be rerun
-  // await migrateSolarSystems() //
-  // await migratePlanet() //
-  //
-  // await migrateAccounts() //
-  // await migrateClaims() //
+  await migrateAreas() //
+  // await migrateAreaTypes() // not sure
+  await migrateAreaNameChoices()
+  await migrateEnergies()
+  await migrateLore()
+  // await migrateHistoricalRecords() // none
+  await migrateNpcs()
+  await migrateActs()
+  await migrateEras()
+  // await migrateAreaLandmark()
+  await migrateAchievements()
+  await migrateBiomeFeatures()
+  await migrateBiomes() // needs to be rerun
+  await migrateSolarSystems()
+  await migratePlanets()
+
+  await migrateAccounts()
+  await migrateClaims()
   // await migrateGameItems()
-  // await migrateTrades()
-  // await migrateTeams()
-  // await migrateReferrals()
-  // await migrateBounties() //
-  // await migrateRaffles()
-  // await migratePolls()
+  await migrateTrades()
+  await migrateTeams()
+  await migrateReferrals()
+  await migrateBounties()
+  await migrateRaffles()
+  await migratePolls()
   // await migrateProposals()
   // await migrateForms()
   // await aggregateStudios()
