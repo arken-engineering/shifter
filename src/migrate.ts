@@ -134,10 +134,7 @@ class ModelWrapper {
       get: (target: T, key: keyof T): any => {
         if (key == 'isProxy') return true
         if (typeof target[key] === 'object' && target[key] != null)
-          return new Proxy(
-            target[key],
-            createHander<any>([...path, key as string])
-          )
+          return new Proxy(target[key], createHander<any>([...path, key as string]))
         return target[key]
       },
       set: (target: T, key: keyof T, value: any) => {
@@ -660,7 +657,7 @@ async function migrateTeams() {
   // "points": 1267,
   // "name": "The First Ones",
   // "description": "Formed after the discovery of a cache of hidden texts in an abandoned, secret Horadric meeting place. This group of scholars was brought together by Bin Zy.",
-  // "icon": "https://rune.farm/images/teams/the-first-ones.png",
+  // "icon": "https://arken.gg/images/teams/the-first-ones.png",
   // "backgroundColor": "#fff",
   // "discord": { "role": "862170863827025950", "channel": "862153263804448769" },
   const existingTeam = await mongo.Team.findOne({ name: overview.name })
@@ -2847,7 +2844,7 @@ async function main() {
   await prisma.$disconnect()
 }
 
-main().catch(async e => {
+main().catch(async (e) => {
   console.error(e)
   await prisma.$disconnect()
   process.exit(1)

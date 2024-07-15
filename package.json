@@ -1,9 +1,10 @@
 {
-  "name": "@arken/data-migrator",
+  "name": "@arken/shifter",
   "version": "1.0.0",
   "main": "build/src/index.js",
   "scripts": {
-    "dev": "RUNE_ENV=local LOG=1 LOG_PREFIX=[DBM] tsnd --respawn -r tsconfig-paths/register ./src/migrate.ts",
+    "dev": "RUNE_ENV=local LOG=1 LOG_PREFIX=[DBM] tsnd -r tsconfig-paths/register ./src/migrate.ts",
+    "devr": "RUNE_ENV=local LOG=1 LOG_PREFIX=[DBM] tsnd --respawn -r tsconfig-paths/register ./src/migrate.ts",
     "build": "NODE_ENV=production tsc && ncp ./src/generated ./build/db-migrator/src/generated && ncp ./src/generatedOld ./build/db-migrator/src/generatedOld",
     "start": "RUNE_ENV=production NODE_ENV=production LOG=1 LOG_PREFIX=[DBM] node -r dotenv/config -r tsconfig-paths/register --max_semi_space_size=30000 --max-old-space-size=30000 --initial-old-space-size=8000 --optimize-for-size --experimental-modules --experimental-json-modules build/db-migrator/src/index.js",
     "migrate": "RUNE_ENV=production NODE_ENV=production LOG=1 LOG_PREFIX=[DBM] node -r dotenv/config --max_semi_space_size=30000 --max-old-space-size=30000 --initial-old-space-size=8000 --optimize-for-size --experimental-modules --experimental-json-modules build/db-migrator/src/migrate.js",
