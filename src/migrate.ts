@@ -2,7 +2,7 @@
 import { v4 as uuidv4 } from 'uuid'
 import jetpack from 'fs-jetpack'
 import path from 'path'
-import { log, isDebug } from '@arken/web-sdk/util'
+import { util } from '@arken/node'
 // import { transformRequest, transformResponse } from '@w4verse/lite-ui/utils/db'
 import { PrismaClient } from './generated'
 import { PrismaClient as OldPrismaClient } from './generatedOld'
@@ -13,49 +13,50 @@ import guild1MemberwData from '../../data/guilds/1/memberDetails.json'
 import referrals from '../../data/affiliate/refers.json'
 import trades from '../../data/trades.json'
 import oldTrades from '../../data/trades2.json'
-import { decodeItem } from '@arken/node'
-import areaNameChoices from 'rune-backend-sdk/src/data/generated/areaNameChoices.json'
-import skills from 'rune-backend-sdk/src/data/generated/skills.json'
-import skillMods from 'rune-backend-sdk/src/data/generated/skillMods.json'
-import skillClassifications from 'rune-backend-sdk/src/data/generated/skillClassifications.json'
-import skillConditions from 'rune-backend-sdk/src/data/generated/skillConditions.json'
-import skillStatusEffects from 'rune-backend-sdk/src/data/generated/skillStatusEffects.json'
-import skillTreeNodes from 'rune-backend-sdk/src/data/generated/skillTreeNodes.json'
-import characterNameChoices from 'rune-backend-sdk/src/data/generated/characterNameChoices.json'
-import characterTitles from 'rune-backend-sdk/src/data/generated/characterTitles.json'
-import characterTypes from 'rune-backend-sdk/src/data/generated/characterTypes.json'
-import characterAttributes from 'rune-backend-sdk/src/data/generated/characterAttributes.json'
-import itemSets from 'rune-backend-sdk/src/data/generated/itemSets.json'
-import itemAttributes from 'rune-backend-sdk/src/data/generated/itemAttributes.json'
-import itemAttributeParams from 'rune-backend-sdk/src/data/generated/itemAttributeParams.json'
-import itemRecipes from 'rune-backend-sdk/src/data/generated/itemRecipes.json'
-import itemRarities from 'rune-backend-sdk/src/data/generated/itemRarities.json'
-import itemMaterials from 'rune-backend-sdk/src/data/generated/itemMaterials.json'
-import itemSubTypes from 'rune-backend-sdk/src/data/generated/itemSubTypes.json'
-import itemSpecificTypes from 'rune-backend-sdk/src/data/generated/itemSpecificTypes.json'
-import itemSlots from 'rune-backend-sdk/src/data/generated/itemSlots.json'
-import itemTypes from 'rune-backend-sdk/src/data/generated/itemTypes.json'
-import gameInfo from 'rune-backend-sdk/src/data/generated/gameInfos.json'
-import characterClasses from 'rune-backend-sdk/src/data/generated/characterClasses.json'
-import characterFactions from 'rune-backend-sdk/src/data/generated/characterFactions.json'
-import characterRaces from 'rune-backend-sdk/src/data/generated/characterRaces.json'
-import lore from 'rune-backend-sdk/src/data/generated/lores.json'
-import biomes from 'rune-backend-sdk/src/data/generated/biomes.json'
-import biomeFeatures from 'rune-backend-sdk/src/data/generated/biomeFeatures.json'
-import acts from 'rune-backend-sdk/src/data/generated/acts.json'
-// import areaTypes from 'rune-backend-sdk/src/data/generated/areaTypes.json'
-import areas from 'rune-backend-sdk/src/data/generated/areas.json'
-import eras from 'rune-backend-sdk/src/data/generated/eras.json'
-import timeGates from 'rune-backend-sdk/src/data/generated/timeGates.json'
-import runeItems from 'rune-backend-sdk/src/data/items'
-import energies from 'rune-backend-sdk/src/data/generated/energies.json'
-import npcs from 'rune-backend-sdk/src/data/generated/npcs.json'
-import planets from 'rune-backend-sdk/src/data/generated/planets.json'
-import solarSystems from 'rune-backend-sdk/src/data/generated/solarSystems.json'
-import games from 'rune-backend-sdk/src/data/generated/games.json'
+import areaNameChoices from '@arken/node/src/data/generated/areaNameChoices.json'
+import skills from '@arken/node/src/data/generated/skills.json'
+import skillMods from '@arken/node/src/data/generated/skillMods.json'
+import skillClassifications from '@arken/node/src/data/generated/skillClassifications.json'
+import skillConditions from '@arken/node/src/data/generated/skillConditions.json'
+import skillStatusEffects from '@arken/node/src/data/generated/skillStatusEffects.json'
+import skillTreeNodes from '@arken/node/src/data/generated/skillTreeNodes.json'
+import characterNameChoices from '@arken/node/src/data/generated/characterNameChoices.json'
+import characterTitles from '@arken/node/src/data/generated/characterTitles.json'
+import characterTypes from '@arken/node/src/data/generated/characterTypes.json'
+import characterAttributes from '@arken/node/src/data/generated/characterAttributes.json'
+import itemSets from '@arken/node/src/data/generated/itemSets.json'
+import itemAttributes from '@arken/node/src/data/generated/itemAttributes.json'
+import itemAttributeParams from '@arken/node/src/data/generated/itemAttributeParams.json'
+import itemRecipes from '@arken/node/src/data/generated/itemRecipes.json'
+import itemRarities from '@arken/node/src/data/generated/itemRarities.json'
+import itemMaterials from '@arken/node/src/data/generated/itemMaterials.json'
+import itemSubTypes from '@arken/node/src/data/generated/itemSubTypes.json'
+import itemSpecificTypes from '@arken/node/src/data/generated/itemSpecificTypes.json'
+import itemSlots from '@arken/node/src/data/generated/itemSlots.json'
+import itemTypes from '@arken/node/src/data/generated/itemTypes.json'
+import gameInfo from '@arken/node/src/data/generated/gameInfos.json'
+import characterClasses from '@arken/node/src/data/generated/characterClasses.json'
+import characterFactions from '@arken/node/src/data/generated/characterFactions.json'
+import characterRaces from '@arken/node/src/data/generated/characterRaces.json'
+import lore from '@arken/node/src/data/generated/lores.json'
+import biomes from '@arken/node/src/data/generated/biomes.json'
+import biomeFeatures from '@arken/node/src/data/generated/biomeFeatures.json'
+import acts from '@arken/node/src/data/generated/acts.json'
+// import areaTypes from '@arken/node/src/data/generated/areaTypes.json'
+import areas from '@arken/node/src/data/generated/areas.json'
+import eras from '@arken/node/src/data/generated/eras.json'
+import timeGates from '@arken/node/src/data/generated/timeGates.json'
+import runeItems from '@arken/node/src/data/items'
+import energies from '@arken/node/src/data/generated/energies.json'
+import npcs from '@arken/node/src/data/generated/npcs.json'
+import planets from '@arken/node/src/data/generated/planets.json'
+import solarSystems from '@arken/node/src/data/generated/solarSystems.json'
+import games from '@arken/node/src/data/generated/games.json'
 import achievements from '../../data/achievements.json'
 import * as schemas from './schema'
 import Mongoose, { ConnectOptions, InferSchemaType } from 'mongoose'
+
+const { log, isDebug } = util
 
 class ModelWrapper {
   model: any
@@ -227,8 +228,43 @@ async function getGuild(oldId: any, oldGuild: any = null) {
 }
 
 async function migrateAccounts() {
+  await oldPrisma.$connect()
+
+  const oldAccounts = await oldPrisma.account.findMany()
+  console.log(`Number of Prisma v1 accounts to migrate: ${oldAccounts.length}`)
+
+  for (const index in oldAccounts) {
+    const oldAccount = oldAccounts[index]
+
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+    process.stdout.write(`Progress: ${(parseInt(index) / oldAccounts.length) * 100}%`)
+
+    if (!oldAccount.email) continue
+
+    let newAccount = await mongo.Account.findOne({ username: oldAccount.email })
+
+    if (!newAccount) {
+      map.Account[oldAccount.address] = await mongo.Account.create({
+        metaverseId: map.Metaverse.Arken.id,
+        username: oldAccount.email,
+        meta: oldAccount.meta,
+        status: {
+          active: 'Active',
+        }[oldAccount.status],
+        email: oldAccount.email,
+        firstName: oldAccount.firstName,
+        lastName: oldAccount.lastName,
+        address: oldAccount.address,
+        avatar: oldAccount.avatar,
+        password: oldAccount.password,
+      })
+    }
+  }
+  process.stdout.write('\n')
+
   const accounts = await prisma.account.findMany()
-  console.log(`Number of accounts to migrate: ${accounts.length}`)
+  console.log(`Number of Prisma v2 accounts to migrate: ${accounts.length}`)
 
   for (const index in accounts) {
     const account = accounts[index]
@@ -239,74 +275,48 @@ async function migrateAccounts() {
 
     // Check if the account already exists in MongoDB
     const existingAccount = await mongo.Account.findOne({
-      $or: [{ key: account.lastName }, { username: account.lastName }],
+      $or: [
+        { lastName: account.lastName },
+        { username: account.lastName },
+        { address: account.address },
+      ],
     })
 
     if (existingAccount) {
       // console.log(`Account with key ${account.lastName} already exists.`)
+      if (!existingAccount.meta.isLegacyMigrated) {
+        existingAccount.meta = account.meta
+        existingAccount.meta.isLegacyMigrated = true
+
+        await existingAccount.save()
+      }
+
       map.Account[existingAccount.address] = existingAccount
+
       continue
     }
 
-    // Insert the account into MongoDB
-    const newAccount = await mongo.Account.create({
-      metaverseId: map.Metaverse.Arken.id,
-      username: account.lastName,
-      key: account.lastName,
-      value: account.value,
-      meta: account.meta,
-      status: 'Pending',
-      email: account.email.replace('rune.farm', 'arken.gg'),
-      firstName: account.firstName,
-      lastName: account.lastName,
-      address: account.address,
-      avatar: account.avatar,
-      password: account.password,
-    })
+    if (!map.Account[account.address]) {
+      map.Account[account.address] = await mongo.Account.create({
+        metaverseId: map.Metaverse.Arken.id,
+        username: account.lastName,
+        key: account.lastName,
+        value: account.value,
+        meta: account.meta,
+        status: 'Pending',
+        email: account.email.replace('rune.farm', 'arken.gg'),
+        firstName: account.firstName,
+        lastName: account.lastName,
+        address: account.address,
+        avatar: account.avatar,
+        password: account.password,
+      })
 
-    map.Account[account.address] = newAccount
-
-    console.log(`Inserted account with ID: ${newAccount.id}`)
+      console.log(`Inserted account with ID: ${map.Account[account.address].id}`)
+    }
   }
 
-  await oldPrisma.$connect()
-
-  const oldAccounts = await oldPrisma.account.findMany()
-  console.log(`Found ${oldAccounts.length} old accounts`)
-
-  for (const index in oldAccounts) {
-    const oldAccount = oldAccounts[index]
-
-    process.stdout.clearLine(0)
-    process.stdout.cursorTo(0)
-    process.stdout.write(`Progress: ${(parseInt(index) / oldAccounts.length) * 100}%`)
-
-    if (map.Account[oldAccount.address]) continue
-
-    let newAccount = await mongo.Account.findOne({ username: oldAccount.email })
-
-    if (!newAccount) continue
-
-    newAccount = await mongo.Account.create({
-      metaverseId: map.Metaverse.Arken.id,
-      username: oldAccount.email,
-      key: oldAccount.key,
-      value: oldAccount.value,
-      meta: oldAccount.meta,
-      status: {
-        active: 'Active',
-      }[oldAccount.status],
-      email: oldAccount.email,
-      firstName: oldAccount.firstName,
-      lastName: oldAccount.lastName,
-      address: oldAccount.address,
-      avatar: oldAccount.avatar,
-      password: oldAccount.password,
-    })
-  }
-  process.stdout.write('\n')
-
-  const oldProfiles = await oldPrisma.profile.findMany()
+  const oldProfiles = await prisma.profile.findMany()
   console.log(`Found ${oldProfiles.length} old profiles`)
 
   for (const oldProfile of oldProfiles) {
@@ -316,22 +326,25 @@ async function migrateAccounts() {
     if (!newProfile) {
       console.log(oldProfile)
       if (!map.Account[oldProfile.address]) {
-        map.Account[oldProfile.address] = await mongo.Account.create({
-          metaverseId: map.Metaverse.Arken.id,
-          username: oldProfile.name,
-          key: oldProfile.key,
-          value: oldProfile.value,
-          meta: oldProfile.meta,
-          status: {
-            active: 'Active',
-          }[oldProfile.status],
-          email: oldProfile.address + '@arken.gg',
-          firstName: oldProfile.name,
-          lastName: oldProfile.address,
+        map.Account[oldProfile.address] = await mongo.Account.findOne({
           address: oldProfile.address,
-          avatar: oldProfile.avatar,
-          password: '',
         })
+
+        if (!map.Account[oldProfile.address]) {
+          map.Account[oldProfile.address] = await mongo.Account.create({
+            metaverseId: map.Metaverse.Arken.id,
+            username: oldProfile.name,
+            meta: oldProfile.meta,
+            status: {
+              active: 'Active',
+            }[oldProfile.status],
+            email: oldProfile.address + '@arken.gg',
+            firstName: oldProfile.name,
+            lastName: oldProfile.address,
+            address: oldProfile.address,
+            avatar: oldProfile.avatar,
+          })
+        }
         // oldProfile.meta.characters
       }
 
@@ -618,7 +631,7 @@ async function migrateTrades() {
     })
 
     // cant find user? look in filesystem
-    const decodedItem = decodeItem(oldTrade.tokenId)
+    const decodedItem = util.decoder.decodeItem(oldTrade.tokenId)
 
     map.Item[decodedItem.token] = await mongo.Item.create({
       metaverseId: map.Metaverse.Arken.id,

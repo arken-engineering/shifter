@@ -5,7 +5,7 @@
   "spinSleepTime": 30000,
   "append": true,
   "watch": false,
-  "command": "sudo RUNE_ENV=production LOG_PREFIX=[DBM] LOG=1 /usr/bin/node -r tsconfig-paths/register --max_semi_space_size=30000 --max-old-space-size=30000 --initial-old-space-size=8000 --optimize-for-size --experimental-modules --experimental-json-modules",
+  "command": "sudo ARKEN_ENV=production LOG_PREFIX=[DBM] LOG=1 /usr/bin/node -r tsconfig-paths/register --max_semi_space_size=30000 --max-old-space-size=30000 --initial-old-space-size=8000 --optimize-for-size --experimental-modules --experimental-json-modules",
   "script": "build/src/index.js",
   "logFile": "./forever-script-log.log",
   "outFile": "./forever-script-out.log",
