@@ -29,14 +29,17 @@
     "tsnd": "^1.0.2",
     "type-graphql": "2.0.0-beta.2",
     "typegraphql-prisma": "^0.25.1",
-    "typescript": "^4.3.4"
+    "typescript": "^4.9.5"
   },
   "dependencies": {
+    "@arken/node": "^1.4.1",
     "dayjs": "^1.11.11",
     "ethers": "^6.13.1",
     "fs-jetpack": "^5.1.0",
     "lodash": "^4.17.21",
     "mongoose": "^8.5.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "uuid": "^9.0.1"
   }

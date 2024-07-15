@@ -22,9 +22,9 @@ Folder structure:
 
 ```
 nvm install 18
-npm install -g pnpm ts-node-dev
-npm install
-pnpm run dev
+npm install -g yarn ts-node-dev
+yarn install
+yarn run dev
 ```
 
 Add this to .env

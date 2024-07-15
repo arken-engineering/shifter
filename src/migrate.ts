@@ -13,7 +13,7 @@ import guild1MemberwData from '../../data/guilds/1/memberDetails.json'
 import referrals from '../../data/affiliate/refers.json'
 import trades from '../../data/trades.json'
 import oldTrades from '../../data/trades2.json'
-// import { decodeItem } from 'rune-backend-sdk/src/util/item-decoder'
+import { decodeItem } from '@arken/node'
 import areaNameChoices from 'rune-backend-sdk/src/data/generated/areaNameChoices.json'
 import skills from 'rune-backend-sdk/src/data/generated/skills.json'
 import skillMods from 'rune-backend-sdk/src/data/generated/skillMods.json'
@@ -183,13 +183,13 @@ class ModelWrapper {
 const mongo: any = {}
 let mongoose
 
-// const oldPrisma = new OldPrismaClient({
-//   datasources: {
-//     db: {
-//       url: process.env.OLD_DATABASE_URL,
-//     },
-//   },
-// })
+const oldPrisma = new OldPrismaClient({
+  datasources: {
+    db: {
+      url: process.env.OLD_DATABASE_URL,
+    },
+  },
+})
 
 const prisma = new PrismaClient({
   datasources: {
@@ -200,6 +200,7 @@ const prisma = new PrismaClient({
 })
 
 const map: any = {}
+const oldmap: any = {}
 
 const gameNumberToGameId = (id: any) =>
   ({
@@ -210,19 +211,43 @@ const gameNumberToGameId = (id: any) =>
     5: map.Game['Arken: Heart of the Oasis'].id,
   }[id])
 
+async function getGuild(oldId: any, oldGuild: any = null) {
+  if (!map.Team[oldId]) {
+    map.Team[oldId] = await mongo.Team.create({
+      metaverseId: map.Metaverse.Arken.id,
+      key: oldGuild.key,
+      name: oldGuild.name,
+      description: oldGuild.description,
+      meta: oldGuild,
+      status: 'Active',
+      ownerId: map.Profile.zen0.id,
+      createdById: map.Profile.zen0.id,
+      editedById: map.Profile.zen0.id,
+    })
+  }
+
+  return map.Team[oldId]
+}
+
 async function migrateAccounts() {
   const accounts = await prisma.account.findMany()
   console.log(`Number of accounts to migrate: ${accounts.length}`)
 
-  for (const account of accounts) {
+  for (const index in accounts) {
+    const account = accounts[index]
+
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+    process.stdout.write(`Progress: ${(parseInt(index) / accounts.length) * 100}%`)
+
     // Check if the account already exists in MongoDB
     const existingAccount = await mongo.Account.findOne({
       $or: [{ key: account.lastName }, { username: account.lastName }],
     })
 
     if (existingAccount) {
-      console.log(`Account with key ${account.key} already exists.`)
-      map.Account[existingAccount.id] = existingAccount
+      // console.log(`Account with key ${account.lastName} already exists.`)
+      map.Account[existingAccount.address] = existingAccount
       continue
     }
 
@@ -242,92 +267,135 @@ async function migrateAccounts() {
       password: account.password,
     })
 
-    map.Account[account.id] = newAccount
+    map.Account[account.address] = newAccount
 
-    console.log(`Inserted account with ID: ${newAccount._id}`)
+    console.log(`Inserted account with ID: ${newAccount.id}`)
   }
+
+  await oldPrisma.$connect()
+
+  const oldAccounts = await oldPrisma.account.findMany()
+  console.log(`Found ${oldAccounts.length} old accounts`)
+
+  for (const index in oldAccounts) {
+    const oldAccount = oldAccounts[index]
+
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+    process.stdout.write(`Progress: ${(parseInt(index) / oldAccounts.length) * 100}%`)
+
+    if (map.Account[oldAccount.address]) continue
+
+    let newAccount = await mongo.Account.findOne({ username: oldAccount.email })
+
+    if (!newAccount) continue
+
+    newAccount = await mongo.Account.create({
+      metaverseId: map.Metaverse.Arken.id,
+      username: oldAccount.email,
+      key: oldAccount.key,
+      value: oldAccount.value,
+      meta: oldAccount.meta,
+      status: {
+        active: 'Active',
+      }[oldAccount.status],
+      email: oldAccount.email,
+      firstName: oldAccount.firstName,
+      lastName: oldAccount.lastName,
+      address: oldAccount.address,
+      avatar: oldAccount.avatar,
+      password: oldAccount.password,
+    })
+  }
+  process.stdout.write('\n')
+
+  const oldProfiles = await oldPrisma.profile.findMany()
+  console.log(`Found ${oldProfiles.length} old profiles`)
+
+  for (const oldProfile of oldProfiles) {
+    // @ts-ignore
+    let newProfile = await mongo.Profile.findOne({ name: oldProfile.lastName })
+
+    if (!newProfile) {
+      console.log(oldProfile)
+      if (!map.Account[oldProfile.address]) {
+        map.Account[oldProfile.address] = await mongo.Account.create({
+          metaverseId: map.Metaverse.Arken.id,
+          username: oldProfile.name,
+          key: oldProfile.key,
+          value: oldProfile.value,
+          meta: oldProfile.meta,
+          status: {
+            active: 'Active',
+          }[oldProfile.status],
+          email: oldProfile.address + '@arken.gg',
+          firstName: oldProfile.name,
+          lastName: oldProfile.address,
+          address: oldProfile.address,
+          avatar: oldProfile.avatar,
+          password: '',
+        })
+        // oldProfile.meta.characters
+      }
+
+      newProfile = await mongo.Profile.create({
+        metaverseId: map.Metaverse.Arken.id,
+        // @ts-ignore
+        name: oldProfile.lastName,
+        key: oldProfile.key,
+        meta: oldProfile.meta,
+        status: oldProfile.status,
+        address: oldProfile.address,
+        roleId: map.Role[{ user: 'User' }[oldProfile.role]].id,
+        accountId: map.Account[oldProfile.address].id,
+        chainId: map.Chain.BSC.id,
+        // @ts-ignore
+        guildId: await getGuild(oldProfile.meta.guildId).id,
+      })
+
+      // @ts-ignore
+      for (const character of oldProfile.meta.characters) {
+        const newCharacter = await mongo.Character.create({
+          metaverseId: map.Metaverse.Arken.id,
+          name: character.name,
+          key: character.key,
+          meta: character,
+          status: 'Active',
+          ownerId: newProfile.id,
+        })
+
+        console.log(`Inserted character with ID: ${newCharacter.id}`)
+      }
+    }
+
+    const achievements = jetpack.read(
+      path.resolve(`../../data/users/${newProfile.address}/achievements.json`),
+      'json'
+    )
+    const characters = jetpack.read(
+      path.resolve(`../../data/users/${newProfile.address}/characters.json`),
+      'json'
+    )
+    const evolution = jetpack.read(
+      path.resolve(`../../data/users/${newProfile.address}/evolution.json`),
+      'json'
+    )
+    const inventory = jetpack.read(
+      path.resolve(`../../data/users/${newProfile.address}/inventory.json`),
+      'json'
+    )
+    const market = jetpack.read(
+      path.resolve(`../../data/users/${newProfile.address}/market.json`),
+      'json'
+    )
+    const overview = jetpack.read(
+      path.resolve(`../../data/users/${newProfile.address}/overview.json`),
+      'json'
+    )
+    console.log(444, achievements, characters, evolution, inventory, market, overview)
+  }
+  process.stdout.write('\n')
 }
-
-// async function migrateAccounts() {
-//   await oldPrisma.$connect()
-
-//   const oldAccounts = await oldPrisma.account.findMany()
-//   console.log(oldAccounts.length)
-//   //   process.exit();
-//   for (const oldAccount of oldAccounts) {
-//     // delete oldAccount.id;
-//
-
-//     map.Account[oldAccount.id] = newId
-
-//     const newAccount = await prisma.account.create({
-//       data: {
-//
-//         name: oldAccount.name,
-//         key: oldAccount.key,
-//         value: oldAccount.value,
-//         meta: oldAccount.meta,
-//         status: oldAccount.status,
-//         createdAt: oldAccount.createdAt,
-//         email: oldAccount.email,
-//         firstName: oldAccount.firstName,
-//         lastName: oldAccount.lastName,
-//         address: oldAccount.address,
-//         avatar: oldAccount.avatar,
-//         password: oldAccount.password,
-//       },
-//     })
-
-//     console.log(newAccount.id)
-//   }
-
-//   const oldProfiles = await oldPrisma.profile.findMany()
-//   console.log(oldProfiles.length)
-
-//   for (const oldProfile of oldProfiles) {
-//      as string
-
-//     const newProfile = await prisma.profile.create({
-//       data: {
-//         applicationId: map.Application.Rune,
-//
-//         name: oldProfile.name,
-//         key: oldProfile.key,
-//         value: oldProfile.value,
-//         meta: oldProfile.meta,
-//         status: oldProfile.status,
-//         createdAt: oldProfile.createdAt,
-//         updatedAt: oldProfile.updatedAt,
-//         address: oldProfile.address,
-//         role: oldProfile.role,
-//         accountId: map.Account[oldProfile.accountId],
-//         chainId: map.Chain['BSC'],
-//       },
-//     })
-
-//     console.log(newProfile.id)
-
-//     // const newCharacter = await prisma.character.create({
-//     //   data: {
-//     //     id: guid(),
-//     //     name: oldProfile.name,
-//     //     key: oldProfile.key,
-//     //     meta: oldProfile.meta,
-//     //     status: 'Active',
-//     //     createdAt: oldProfile.createdAt,
-//     //     updatedAt: oldProfile.updatedAt,
-//     //     ownerId: newId as never,
-//     //   },
-//     // })
-
-//     // const achievements = jetpack.read(path.resolve(`../../../users/${newProfile.address}/achievements.json`), 'json')
-//     // const characters = jetpack.read(path.resolve(`../../../users/${newProfile.address}/characters.json`), 'json')
-//     // const evolution = jetpack.read(path.resolve(`../../../users/${newProfile.address}/evolution.json`), 'json')
-//     // const inventory = jetpack.read(path.resolve(`../../../users/${newProfile.address}/inventory.json`), 'json')
-//     // const market = jetpack.read(path.resolve(`../../../users/${newProfile.address}/market.json`), 'json')
-//     // const overview = jetpack.read(path.resolve(`../../../users/${newProfile.address}/overview.json`), 'json')
-//   }
-// }
 
 async function migrateClaims() {
   // @ts-ignore
@@ -353,14 +421,13 @@ async function migrateClaims() {
     }
 
     await mongo.Payment.create({
-      applicationId: map.Application.Arken.id,
+      metaverseId: map.Metaverse.Arken.id,
       name: claimRequest.username,
       value: claimRequest.address,
       key: claimRequest.id,
       meta: claimRequest,
       status: claimRequest.status,
       ownerId: profile._id,
-      createdAt: new Date(claimRequest.createdAt),
     })
 
     console.log(`Inserted claim request with ID: ${claimRequest.id}`)
@@ -396,12 +463,16 @@ async function migrateReferrals() {
       continue
     }
 
+    const status = {
+      submitted: 'Pending',
+      paying: 'Paying',
+    }[referral.status]
+
     await mongo.Referral.create({
       recipientId: recipient._id,
       senderId: sender._id,
       meta: referral,
-      status: referral.status,
-      createdAt: new Date(referral.createdAt),
+      status,
     })
 
     console.log(`Inserted referral with ID: ${referral.id}`)
@@ -417,9 +488,10 @@ async function migrateAssets() {
 
   // @ts-ignore
   for (const item of items) {
+    oldmap.Asset[item.id] = item
     if (!item.id) continue
 
-    const asset = await mongo.Asset.create({
+    map.Asset[item.name] = await mongo.Asset.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       key: item.id + '',
@@ -427,7 +499,7 @@ async function migrateAssets() {
       status: 'Active',
     })
 
-    console.log(asset.id)
+    // console.log(asset.id)
   }
 }
 
@@ -514,155 +586,121 @@ async function createItem(item, owner?) {
 
 async function migrateTrades() {
   // {"market": {"trades": []}, "points": 1, "address": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "guildId": 2, "premium": {"locked": 0, "features": [], "unlocked": 0}, "rewards": {"items": [], "runes": {}}, "daoVotes": [], "holdings": {}, "username": "Harry", "evolution": {}, "inventory": {"items": [{"id": 1, "from": "0x6Bf051ce847A0EBBc10fA22884C01D550BD40269", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 8, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 8, "variant": 1, "attributeId": 1}, {"value": 2, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 1}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Magical", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001100810021001111111", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649762142003, "isRetired": true, "shorthand": "8-2", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 8, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 2, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.44, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110081002100111...111", "isUnequipable": false, "isTransferable": true}, {"id": 1, "from": "0x85C07b6a475Ee19218D0ef9C278C7e58715Af842", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 14, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 14, "variant": 1, "attributeId": 1}, {"value": 1, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 0}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Rare", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001101410011001111101", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649764095769, "isRetired": true, "shorthand": "14-1", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 14, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 1, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.85, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110141001100111...101", "isUnequipable": false, "isTransferable": true}, {"id": 3, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000030500020002000024182", "createdAt": 1649763909508, "perfection": 0.5}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10020000201000500240030991", "createdAt": 1649763909610, "perfection": 0.4}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030031002432194", "createdAt": 1649763909691, "perfection": 0.45}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100040033004045827", "createdAt": 1649763909821, "perfection": 0.3}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030034002847742", "createdAt": 1649763909914, "perfection": 0.43}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "100200002010006003200287488", "createdAt": 1649763909984, "perfection": 0.65}, {"id": 4, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10010000410001000120319017", "createdAt": 1649763912928, "perfection": 1}]}, "characters": [{"id": 7, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "699", "transferredAt": 1627276078338}], "permissions": {"admin": {}}, "achievements": [1], "joinedGuildAt": 1627274005785, "rewardHistory": [], "lastGamePlayed": 0, "lifetimeRewards": {"items": [], "runes": {}}, "craftedItemCount": 7, "equippedItemCount": 0, "inventoryItemCount": 0, "transferredInCount": 0, "transferredOutCount": 2, "marketTradeSoldCount": 0, "guildMembershipTokenId": 699, "marketTradeListedCount": 0, "isGuildMembershipActive": true}
-  // const profiles = await prisma.profile.findMany()
-  // for (const profile of profiles) {
-  //   // @ts-ignore
-  //   const trades = profile.meta?.market.trades
-  //   if (!trades || !Array.isArray(trades) || trades.length === 0) continue
-  //   console.log(trades)
-  //   return
-  // }
-  // for (const trade of oldTrades) {
-  //
-  //   trade.version = 1
-  //   const buyer =
-  //     trade.buyer !== '0x0000000000000000000000000000000000000000'
-  //       ? await prisma.profile.findFirst({
-  //           where: { address: { equals: trade.buyer } },
-  //         })
-  //       : null
-  //   const owner = await prisma.profile.findFirst({
-  //     where: { address: { equals: trade.owner } },
-  //   })
-  //   cant find user? look in filesystem
-  //   const item = decodeItem(trade.tokenId)
-  //   const asset = find asset by trade.item.id + ''
-  //   const trade = await prisma.trade.create({
-  //     data: {
-  //       applicationId: map.Application.Arken.id,
-  //
-  //       name: trade.name,
-  //       value: trade.address,
-  //       ownerId: owner.id,
-  //       buyerId: buyer?.id,
-  //       key: trade.id + '',
-  //       meta: trade,
-  //       status: trade.status,
-  //
-  //       itemsOnTrade: {
-  //         createOrConnect: {
-  //           [
-  //             {
-  //               item: {
-  //                 createOrConnect: {
-  //                   applicationId: map.Application.Arken.id,
-  //                   key: trade.item.id + ''
-  //                   assetId: asset.id
-  //                   meta: item
-  //                   chain: 'bsc'
-  //                 }
-  //               }
-  //             }
-  //           ]
-  //         }
-  //       }
-  //     },
-  //   })
-  // }
-}
-async function migrateTeams() {
-  {
-    const overview = guild1OverviewData
+  // {
+  //   "id": 1,
+  //   "seller": "0x576a83f7B93df7D6BE68A3cfF148eDF9CF77D810",
+  //   "buyer": "0x0000000000000000000000000000000000000000",
+  //   "tokenId": "10010000210071037103230819",
+  //   "price": 0.5,
+  //   "status": "available",
+  //   "hotness": 0,
+  //   "createdAt": 1623829064720,
+  //   "updatedAt": 1623829064720,
+  //   "lastBlock": 7496648,
+  //   "blockNumber": 7496648
+  // },
+  const profiles = await mongo.Profile.find()
+  for (const profile of profiles) {
+    // @ts-ignore
+    const trades = profile.meta?.market.trades
+    if (!trades || !Array.isArray(trades) || trades.length === 0) continue
+    console.log(trades)
+    return
+  }
+  // @ts-ignore
+  for (const oldTrade of oldTrades) {
+    oldTrade.version = 1
+    const buyer =
+      oldTrade.buyer !== '0x0000000000000000000000000000000000000000'
+        ? await mongo.Profile.findOne({
+            address: oldTrade.buyer,
+          })
+        : null
+    const owner = await prisma.profile.findFirst({
+      where: { address: { equals: oldTrade.owner } },
+    })
 
-    // "memberCount": 54,
-    // "activeMemberCount": 37,
-    // "points": 1267,
-    // "name": "The First Ones",
-    // "description": "Formed after the discovery of a cache of hidden texts in an abandoned, secret Horadric meeting place. This group of scholars was brought together by Bin Zy.",
-    // "icon": "https://rune.farm/images/teams/the-first-ones.png",
-    // "backgroundColor": "#fff",
-    // "discord": { "role": "862170863827025950", "channel": "862153263804448769" },
-    const existingTeam = await mongo.Team.findOne({ name: overview.name })
-    if (!existingTeam) {
-      await mongo.Team.create({
-        metaverseId: map.Metaverse.Arken.id,
-        name: overview.name,
-        description: overview.description,
-        key: overview.name,
-        meta: overview,
-        status: 'Active',
-      })
-    }
+    // cant find user? look in filesystem
+    const decodedItem = decodeItem(oldTrade.tokenId)
 
-    // {
-    //   "address": "0xa94210Bce97C665aCd1474B6fC4e9817a456EECd",
-    //   "username": "kucka",
-    //   "points": 1,
-    //   "achievementCount": 1,
-    //   "isActive": true,
-    //   "characterId": 6
-    // },
-    for (const member of overview.memberDetails) {
-      const profile = await mongo.Profile.findOne({ address: member.address })
+    map.Item[decodedItem.token] = await mongo.Item.create({
+      metaverseId: map.Metaverse.Arken.id,
+      chain: map.Chain.BSC.id,
+      assetId: map.Asset[decodedItem.name].id,
+      key: decodedItem.token,
+      meta: decodedItem,
+      name: decodedItem.name,
+      token: decodedItem.token,
+      status: 'Active',
+    })
 
-      if (profile) {
-        // Code to handle profile related operations
-        // Example:
-        // await mongo.Character.create({
-        //   profileId: profile._id,
-        //   metaverseId: map.Metaverse.Arken.id,
-        //   ...
-        // });
-      }
-    }
-
-    // Use profiles to generate characters
-    // character belongs to profile and metaverse
-    // metaverse has a parent metaverse (visualize)
-    // team uses character
-    // metaverse can have a list of products (games)
+    // const asset = find asset by trade.item.id + ''
+    map.Trade[oldTrade.id + ''] = await mongo.Trade.create({
+      metaverseId: map.Metaverse.Arken.id,
+      name: oldTrade.name,
+      value: oldTrade.address,
+      ownerId: owner.id,
+      buyerId: buyer?.id,
+      key: oldTrade.id + '',
+      meta: oldTrade,
+      status: {
+        available: 'Available',
+        delisted: 'Delisted',
+        sold: 'Sold',
+      }[oldTrade.status],
+    })
   }
 }
 
-// async function migrateAchievements() {
-//   const metaverse = await mongo.Metaverse.findOne({
-//     name: 'Arken',
-//   })
+async function migrateTeams() {
+  const overview = guild1OverviewData
 
-//   if (!metaverse) {
-//     console.error('Metaverse not found')
-//     return
-//   }
+  // "memberCount": 54,
+  // "activeMemberCount": 37,
+  // "points": 1267,
+  // "name": "The First Ones",
+  // "description": "Formed after the discovery of a cache of hidden texts in an abandoned, secret Horadric meeting place. This group of scholars was brought together by Bin Zy.",
+  // "icon": "https://rune.farm/images/teams/the-first-ones.png",
+  // "backgroundColor": "#fff",
+  // "discord": { "role": "862170863827025950", "channel": "862153263804448769" },
+  const existingTeam = await mongo.Team.findOne({ name: overview.name })
+  if (!existingTeam) {
+    await mongo.Team.create({
+      metaverseId: map.Metaverse.Arken.id,
+      name: overview.name,
+      description: overview.description,
+      key: overview.name,
+      meta: overview,
+      status: 'Active',
+    })
+  }
 
-//   const achievements = await prisma.achievement.findMany({
-//     where: { metaverseId: metaverse.id },
-//   })
+  // {
+  //   "address": "0xa94210Bce97C665aCd1474B6fC4e9817a456EECd",
+  //   "username": "kucka",
+  //   "points": 1,
+  //   "achievementCount": 1,
+  //   "isActive": true,
+  //   "characterId": 6
+  // },
+  for (const member of overview.memberDetails) {
+    const profile = await mongo.Profile.findOne({ address: member.address })
 
-//   for (const item of achievements) {
-//     // if (item.icon) item.icon = item.icon.replace('undefined', '');
+    if (profile) {
+      await mongo.Character.create({
+        profileId: profile._id,
+        metaverseId: map.Metaverse.Arken.id,
+        classId: map.Class[member.characterId].id,
+      })
+    }
+  }
 
-//     // Check if the achievement already exists in MongoDB
-//     const existingAchievement = await mongo.Achievement.findOne({ key: item.key })
-
-//     if (existingAchievement) {
-//       console.log(`Achievement with key ${item.key} already exists.`)
-//       continue
-//     }
-
-//     // Insert the achievement into MongoDB
-//     const newAchievement = await mongo.Achievement.create({
-//       applicationId: map.Application.Arken.id,
-//       metaverseId: metaverse.id,
-//       name: item.name,
-//       description: '',
-//       key: item.key,
-//       meta: item,
-//       status: item.status,
-//     })
-
-//     console.log(`Inserted achievement with key: ${item.key}`)
-//   }
-// }
+  // Use profiles to generate characters
+  // character belongs to profile and metaverse
+  // metaverse has a parent metaverse (visualize)
+  // team uses character
+  // metaverse can have a list of products (games)
+}
 
 async function migrateAchievements() {
   // {"market": {"trades": []}, "points": 1, "address": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "guildId": 2, "premium": {"locked": 0, "features": [], "unlocked": 0}, "rewards": {"items": [], "runes": {}}, "daoVotes": [], "holdings": {}, "username": "Harry", "evolution": {}, "inventory": {"items": [{"id": 1, "from": "0x6Bf051ce847A0EBBc10fA22884C01D550BD40269", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 8, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 8, "variant": 1, "attributeId": 1}, {"value": 2, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 1}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Magical", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001100810021001111111", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649762142003, "isRetired": true, "shorthand": "8-2", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 8, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 2, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.44, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110081002100111...111", "isUnequipable": false, "isTransferable": true}, {"id": 1, "from": "0x85C07b6a475Ee19218D0ef9C278C7e58715Af842", "icon": "undefinedimages/items/00001.png", "meta": {"harvestBurn": 0, "harvestFees": {}, "harvestYield": 14, "chanceToLoseHarvest": 0, "chanceToSendHarvestToHiddenPool": 0}, "mods": [{"value": 14, "variant": 1, "attributeId": 1}, {"value": 1, "variant": 1, "attributeId": 2}, {"value": 1, "variant": 1, "attributeId": 3}, {"value": 111, "variant": 1}, {"value": 1, "variant": 0}], "name": "Steel", "type": 0, "isNew": false, "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "slots": [1, 2], "value": "0", "rarity": "Rare", "recipe": {"requirement": [{"id": 3, "quantity": 1}, {"id": 1, "quantity": 1}]}, "slotId": 1, "status": "transferred_out", "details": {"Date": "April 20, 2021 - June 4, 2021", "Type": "Sword", "Subtype": "Night Blade", "Rune Word": "Tir El", "Max Supply": "Unknown", "Distribution": "Crafted"}, "hotness": 6, "tokenId": "100100001101410011001111101", "version": 1, "branches": {"1": {"attributes": [{"id": 1, "max": 15, "min": 5, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "perfection": [15, 0], "description": ["Made by Men, this blade is common but has minimal downsides."]}, "2": {"attributes": [{"id": 1, "max": 20, "min": 16, "description": "{value}% Increased Attack Speed"}, {"id": 3, "max": 8, "min": 6, "description": "{value}% Less Damage"}, {"id": 4, "max": 100, "min": 81, "description": "{value} Increased Maximum Rage"}, {"id": 5, "max": 5, "min": 3, "description": "{value} Increased Elemental Resists"}, {"id": 7, "max": 5, "min": 3, "description": "{value} Increased Minion Attack Speed"}, {"id": 8, "value": 3, "description": "{value} Increased Light Radius"}], "description": "Made by Men, this blade is common but has minimal downsides."}}, "category": "weapon", "createdAt": 1649764095769, "isRetired": true, "shorthand": "14-1", "attributes": [{"id": 1, "max": 15, "min": 5, "value": 14, "variant": 1, "attributeId": 1, "description": "{value}% Increased Harvest Yield"}, {"id": 2, "max": 5, "min": 0, "value": 1, "variant": 1, "attributeId": 2, "description": "{value}% Harvest Fee"}, {"id": 3, "map": {"0": "EL", "1": "ELD", "2": "TIR", "3": "NEF", "4": "ITH", "5": "ITH", "6": "TAL", "7": "RAL", "8": "ORT", "9": "THUL", "10": "AMN", "11": "SOL", "12": "SHAEL"}, "max": 2, "min": 0, "value": 1, "variant": 1, "attributeId": 3, "description": "Harvest Fee Token: {value}"}, {"id": 55, "max": 2, "min": 2, "value": 2, "description": "{value} Sockets"}], "isDisabled": false, "isRuneword": true, "perfection": 0.85, "createdDate": 12111, "isCraftable": false, "isEquipable": true, "isTradeable": true, "shortTokenId": "10010000110141001100111...101", "isUnequipable": false, "isTransferable": true}, {"id": 3, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000030500020002000024182", "createdAt": 1649763909508, "perfection": 0.5}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10020000201000500240030991", "createdAt": 1649763909610, "perfection": 0.4}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030031002432194", "createdAt": 1649763909691, "perfection": 0.45}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100040033004045827", "createdAt": 1649763909821, "perfection": 0.3}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "1002000020100030034002847742", "createdAt": 1649763909914, "perfection": 0.43}, {"id": 2, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "100200002010006003200287488", "createdAt": 1649763909984, "perfection": 0.65}, {"id": 4, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "10010000410001000120319017", "createdAt": 1649763912928, "perfection": 1}]}, "characters": [{"id": 7, "from": "0x0000000000000000000000000000000000000000", "owner": "0x1cAA7069d4552055d3187097998504f9dd3CA496", "status": "created", "tokenId": "699", "transferredAt": 1627276078338}], "permissions": {"admin": {}}, "achievements": [1], "joinedGuildAt": 1627274005785, "rewardHistory": [], "lastGamePlayed": 0, "lifetimeRewards": {"items": [], "runes": {}}, "craftedItemCount": 7, "equippedItemCount": 0, "inventoryItemCount": 0, "transferredInCount": 0, "transferredOutCount": 2, "marketTradeSoldCount": 0, "guildMembershipTokenId": 699, "marketTradeListedCount": 0, "isGuildMembershipActive": true}
@@ -689,6 +727,8 @@ async function migrateAchievements() {
   }
 
   for (const item of achievements) {
+    oldmap.Achievement[item.id] = item
+
     if (item.icon) item.icon = item.icon.replace('undefined', '')
 
     // Check if the achievement already exists in MongoDB
@@ -713,7 +753,29 @@ async function migrateAchievements() {
 }
 
 async function migrateAreas() {
+  // "uuid": "recCyWeKMWDmMyIxk",
+  // "id": 23,
+  // "name": "Agrador",
+  // "isEnabled": true,
+  // "link": "https://arken.gg/zone/agrador",
+  // "shortDescription": "The northernmost city in Haerra, a cold and dark place which houses prospectors and fishermen.",
+  // "description": "The northernmost city in Haerra, a cold and dark place which houses prospectors and fishermen.\n",
+  // "lore1": "## **AGRADOR**\n\nAgrador is the northernmost city in Haerra, sitting on a tongue of land between the Frigid Abyss and Agar-Bassim’s Fjords. It is an impoverished place, mainly inhabited by fishermen who hunt whales, seals, and a wide variety of fish. The city has a small garrison and a large naval base built and serviced by the Radiant Viziers, who control the inland Blackrock Castle. \n\nAlthough Agrador is a port city, few trade routes run through the area, and shipments of foreign goods are few and far in between. The town consists of a number of shops and tradesmen serving the needs of the fishermen, prospectors, and Vizier navy. It is famous for its brothels, gambling establishments, and rough bars that are supposedly run by the Aakschipper, the mythical head of the Haverak Syndicate.\n",
+  // "lore2": "## **CESSPOOL OF HAERRA**\n\nDespite housing a garrison and naval base of the Radiant Viziers, Agrador is infested with crime and corruption. Many of the administrators, both city and Vizier, are paid off by the criminal organizations operating within the city. Even those not bribed generally turn a blind eye, as they possess neither the resources nor the steel to bring law and order to the area. As a result, the Haverak Syndicate thrives here with few checks, running smuggling operations down the coast and across the fjords. In Hevane and elsewhere in the south, Agrador is referred to as the “cesspool of Haerra,” and it generally lives up to that name.\n",
+  // "lore3": "## **NATURAL BEAUTY**\n\nThough Agrador is riddled with illegal activity and villainy, it is also home to some of the most wondrous winter sights on the continent. As the northernmost city in Haerra, Agrador’s days are blanketed in darkness for most of the year. This allows crystalline views of the multicolored northern lights that often hang heavy in the sky, glowing with vibrant reds, oranges, golds, and pinks. Even the ocean shimmers with light off the coast of Agrador: bioluminescent shrimp and other sea life glitter with greens and blues, creating a brilliant starscape in the surrounding ocean.\n",
+  // "lore4": "\n",
+  // "types": [16],
+  // "npcs": [],
+  // "guilds": [],
+  // "factions": [],
+  // "characters": [],
+  // "characterTypes": [5],
+  // "timeGates": [],
+  // "itemMaterials": [],
+  // "biomes": [55, 2]
   for (const item of areas) {
+    oldmap.Area[item.id] = item
+
     // Check if the area already exists in MongoDB
     const existingArea = await mongo.Area.findOne({ name: item.name })
     if (existingArea) {
@@ -749,6 +811,7 @@ async function migrateCharacterAttributes() {
   console.log('Migrating character attributes')
 
   for (const item of characterAttributes) {
+    oldmap.CharacterAttribute[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.CharacterAttribute.findOne({ name: item.name })
@@ -769,6 +832,7 @@ async function migrateCharacterAttributes() {
 
 async function migrateSkillMods() {
   for (const item of skillMods) {
+    oldmap.SkillMod[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.SkillMod.findOne({ name: item.name })
@@ -789,6 +853,7 @@ async function migrateSkillMods() {
 
 async function migrateSkillClassifications() {
   for (const item of skillClassifications) {
+    oldmap.SkillClassification[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.SkillClassification.findOne({ name: item.name })
@@ -809,6 +874,7 @@ async function migrateSkillClassifications() {
 
 async function migrateSkillConditions() {
   for (const item of skillConditions) {
+    oldmap.SkillCondition[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.SkillCondition.findOne({ name: item.name })
@@ -847,6 +913,7 @@ async function migrateSkillConditions() {
 // }
 async function migrateSkillStatusEffects() {
   for (const item of skillStatusEffects) {
+    oldmap.SkillStatusEffect[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.SkillStatusEffect.findOne({ name: item.name })
@@ -869,6 +936,7 @@ async function migrateSkillTrees() {
   const skillTrees = []
 
   for (const item of skillTrees) {
+    oldmap.SkillTree[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.SkillTree.findOne({ name: item.name })
@@ -889,6 +957,7 @@ async function migrateSkillTrees() {
 
 async function migrateSkillTreeNodes() {
   for (const item of skillTreeNodes) {
+    oldmap.SkillTreeNode[item.uuid] = item
     if (!item.name) continue
 
     const existingItem = await mongo.SkillTreeNode.findOne({ name: item.name })
@@ -909,6 +978,7 @@ async function migrateSkillTreeNodes() {
 
 async function migrateSkills() {
   for (const item of skills) {
+    oldmap.Skill[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.Skill.findOne({ name: item.name })
@@ -954,6 +1024,7 @@ async function migrateItemTransmuteRules() {
 
 async function migrateCharacterTitles() {
   for (const item of characterTitles) {
+    oldmap.CharacterTitle[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.CharacterTitle.findOne({ name: item.name })
@@ -974,6 +1045,7 @@ async function migrateCharacterTitles() {
 
 async function migrateCharacterTypes() {
   for (const item of characterTypes) {
+    oldmap.CharacterType[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.CharacterType.findOne({ name: item.name })
@@ -994,6 +1066,7 @@ async function migrateCharacterTypes() {
 
 async function migrateActs() {
   for (const item of acts) {
+    oldmap.Act[item.id] = item
     const existingItem = await mongo.Act.findOne({ name: item.name })
     if (existingItem) continue
 
@@ -1012,6 +1085,7 @@ async function migrateActs() {
 
 async function migrateEras() {
   for (const item of eras) {
+    oldmap.Era[item.id] = item
     const existingItem = await mongo.Era.findOne({ name: item.name })
     if (existingItem) continue
 
@@ -1030,6 +1104,7 @@ async function migrateEras() {
 
 async function migratePlanets() {
   for (const item of planets) {
+    oldmap.Planet[item.id] = item
     const existingItem = await mongo.Planet.findOne({ name: item.name })
     if (existingItem) continue
 
@@ -1048,6 +1123,7 @@ async function migratePlanets() {
 
 async function migrateSolarSystems() {
   for (const item of solarSystems) {
+    oldmap.SolarSystem[item.id] = item
     const existingItem = await mongo.SolarSystem.findOne({ name: item.name })
     if (existingItem) continue
 
@@ -1066,6 +1142,7 @@ async function migrateSolarSystems() {
 
 async function migrateLore() {
   for (const item of lore) {
+    oldmap.Lore[item.id] = item
     const existingItem = await mongo.Lore.findOne({ name: item.name })
     if (existingItem) continue
 
@@ -1084,20 +1161,84 @@ async function migrateLore() {
 
 async function migrateGames() {
   for (const item of games) {
-    const existingItem = await mongo.Game.findOne({ name: item.name })
-    if (existingItem) continue
+    oldmap.Game[item.id] = item
+    map.Game[item.name] = await mongo.Game.findOne({ name: item.name })
+    // "uuid": "recHYXHqb8LY3DGsJ",
+    // "id": 1,
+    // "name": "Arken: Runic Raids",
+    // "link": "https://arken.gg/game/raid",
+    // "primaryColor": "red",
+    // "secondaryColor": "white",
+    // "logoLink": "https://arken.gg/images/games/rune-raid-logo.png",
+    // "shortDescription": "Rune is an addicting dark fantasy RPG. Play and earn runes (crypto) battling players and AI. Use runes to craft gear (NFTs) to make your character more powerful.",
+    // "description": "The Future DeFi and Gaming Ecosystem\n\nHybrid gaming ecosystem which utilizes NFT game assets, seamless integration into a conventional game.\n",
+    // "storyline": "",
+    // "cmcDescription": "## What Is Rune (RUNE)?\n\n[Rune](https://coinmarketcap.com/currencies/rune/) is an open-ended dark fantasy gaming universe built on [Binance Smart Chain](https://coinmarketcap.com/alexandria/article/what-is-binance-smart-chain), where players can battle, join a guild, collect powerful weapons, and earn [NFTs](https://coinmarketcap.com/alexandria/glossary/non-fungible-token) and cryptocurrency in the form of runes by playing.\n\nRunes are small and rare stones inscribed with magical glyphs needed to craft Runewords (NFTs), weapons, and armor. 33 different Runes are distributed to players over two years. Each Rune has a supply of 100,000 or less, and players can earn Runes by competing against other players, joining guilds, participating in yield farms, and community participation.\n\nThe Rune universe consists of Second Wind, a play-to-earn game, Rune Farm, the yield farm, Runewords (NFTs), and the Infinite Arena Arena, a player-versus-player game. The team is also developing the Heart of the Oasis, an MMORPG that will be launched in 2022. Currently, Rune is running on BSC, but the team sees the universe as blockchain-agnostic and is building a bridge to [Polygon](https://coinmarketcap.com/currencies/polygon/).\n\n## Who Are the Founders of Rune?\n\nRune’s founders are anonymous. The team chose to stay anonymous to protect itself, its associates, and users from “archaic legislation imposed by governments who won’t understand the emerging DeFi field for years to come.” The team alludes to “Binzy,” which is their fill-in for the person(s) behind Rune, a real software engineer with 20 years of experience and connections in the crypto world.\nIn total, the team consists of 12 people: the lead dev, four unity developers, a React developer, a Solidity developer, two consultant developers, two consultant project managers, one marketing manager, one community manager, four mods and some advisors.\n\n## What Makes Rune Unique?\n\nRune offers an attractive mix of blockchain gaming, NFTs, and elements from decentralized finance. Its universe is split into four different parts.\n\nSecond Wind is a play-to-earn game and was the first game built for the ecosystem. You start as a dragonling that can fly around and eat sprites to evolve into a dragon eventually. One round in the web browser-based game lasts five minutes, and players can earn crypto as a reward.\n\nRune Farm is the yield farm that attracts liquidity to the ecosystem. You can acquire runes through providing liquidity and raiding farms, i.e., yield farming. The team promises that since the supply of runes is limited, their price should find a bottom. Moreover, each rune has its specific utility, and runes can also be combined to build Runewords. Furthermore, for 2022, an online RPG built around runes is in development.\n\nRunewords (NFTs) are unique weapons and armor. Each Runeword is suitable for a specific hero class (seven different hero classes exist) or style of play. Runewords improve a hero’s capabilities in battle and offer improved farming and merchant abilities. Runewords are shared, collected, and traded in the Rune Market and players will soon be able to lend them to others. Runewords are crafted from runes.\n\nFinally, the Infinite Arena Arena is a player-versus-player, web-based 2D topdown game, where you battle your opponents for prizes. Once you defeat an opponent, they go back to the beginning while you can continue the path that goes on infinitely. The last one standing after one minute of battle claims a reward in the form of crypto or NFTs. Every 15 minutes, you enter a new arena.\n",
+    // "contracts": "- [0x4596e527eba13a27cd02576d023695eab0a6b210](https://www.bscscan.com/address/0x4596e527eba13a27cd02576d023695eab0a6b210)\n- BSC\n- [0x5fE24631136D570D12920C9Fa0FEcaDA84E47673](https://www.bscscan.com/address/0x5fE24631136D570D12920C9Fa0FEcaDA84E47673)\n- BSC\n- [0xB615023dfa06944B06c4caDB308E6009907E8f4d](https://www.bscscan.com/address/0xB615023dfa06944B06c4caDB308E6009907E8f4d)\n- BSC\n- [0xdAE69A43bC73e662095b488dbDDD1D3aBA59c1FF](https://www.bscscan.com/address/0xdAE69A43bC73e662095b488dbDDD1D3aBA59c1FF)\n- BSC\n- [0xe97a1b9f5d4b849f0d78f58adb7dd91e90e0fb40](https://www.bscscan.com/address/0xe97a1b9f5d4b849f0d78f58adb7dd91e90e0fb40)\n- BSC\n- [0xa9776b590bfc2f956711b3419910a5ec1f63153e](https://www.bscscan.com/address/0xa9776b590bfc2f956711b3419910a5ec1f63153e)\n- BSC\n- [0xcfA857d6EC2F59b050D7296FbcA8a91D061451f3](https://www.bscscan.com/address/0xcfA857d6EC2F59b050D7296FbcA8a91D061451f3)\n- BSC\n- [0x6122F8500e7d602629FeA714FEA33BC2B2e0E2ac](https://www.bscscan.com/address/0x6122F8500e7d602629FeA714FEA33BC2B2e0E2ac)\n- BSC\n- [0x3e151ca82b3686f555c381530732df1cfc3c7890](https://www.bscscan.com/address/0x3e151ca82b3686f555c381530732df1cfc3c7890)\n- BSC\n- [0x2a74b7d7d44025bcc344e7da80d542e7b0586330](https://www.bscscan.com/address/0x2a74b7d7d44025bcc344e7da80d542e7b0586330)\n- BSC\n- [0x60e3538610e9f4974a36670842044cb4936e5232](https://www.bscscan.com/address/0x60e3538610e9f4974a36670842044cb4936e5232)\n- BSC\n- [0x2098fef7eeae592038f4f3c4b008515fed0d5886](https://www.bscscan.com/address/0x2098fef7eeae592038f4f3c4b008515fed0d5886)\n- BSC\n\n"
 
-    const newGame = await mongo.Game.create({
+    // to:
+    // key: { type: String, required: true },
+    // name: { type: String, required: true },
+    // description: { type: String },
+    // productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+    // ownerId: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    // createdById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    // editedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    // deletedById: { type: Schema.Types.ObjectId, ref: 'Profile' },
+    // createdDate: { type: Date, default: Date.now },
+    // updatedDate: { type: Date },
+    // deletedDate: { type: Date },
+    // meta: { type: Object, default: {} },
+    // status: { type: String, default: 'Active', enum: ['Paused', 'Pending', 'Active', 'Archived'] },
+    if (map.Game[item.name]) {
+      map.Game[item.name].description = item.description
+      map.Game[item.name].meta = item
+      map.Game[item.name].status = 'Active'
+
+      await map.Game[item.name].save()
+
+      continue
+    }
+
+    if (!map.Application[item.name]) {
+      map.Application[item.name] = await mongo.Application.findOne({
+        name: item.name,
+      }).exec()
+
+      if (!map.Application[item.name]) {
+        map.Application[item.name] = await mongo.Application.create({
+          metaverseId: map.Metaverse.Arken.id,
+          name: item.name,
+          key: item.name,
+          status: 'Active',
+        })
+      }
+    }
+
+    if (!map.Product[item.name]) {
+      map.Product[item.name] = await mongo.Product.findOne({
+        name: item.name,
+      }).exec()
+
+      if (!map.Product[item.name]) {
+        map.Product[item.name] = await mongo.Product.create({
+          applicationId: map.Application[item.name].id,
+          name: item.name,
+          key: item.name,
+          status: 'Active',
+        })
+      }
+    }
+
+    map.Game[item.name] = await mongo.Game.create({
       metaverseId: map.Metaverse.Arken.id,
       productId: map.Game[item.name].id,
       name: item.name,
-      description: '',
+      description: item.description,
       key: item.name,
       meta: item,
       status: 'Active',
     })
-
-    await newGame.save()
   }
 }
 
@@ -1107,72 +1248,48 @@ async function migrateGuides() {
   // const gameGuides = await prisma.gameGuide.findMany()
 
   for (const item of gameInfo) {
-    //
-
+    oldmap.Guide[item.uuid] = item
+    // "uuid": "recwto2jjdQAl72Ja",
+    // "name": "Game Description",
+    // "text": "**Game Objective**\n\nDefeat a continuous stream of player opponents in skill-based gameplay to earn prizes.\n\n\n",
+    // "game": 3,
+    // "isEnabled": true,
+    // "attachments": []
     // Check if the game guide already exists in MongoDB
-    const existingGuide = await mongo.Guide.find({ name: item.name }).exec()
+    map.Guide[item.name] = await mongo.Guide.find({ name: item.name }).exec()
 
-    if (existingGuide) {
+    if (map.Guide[item.name]) {
       console.log(`Game guide with name ${item.name} already exists.`)
       continue
     }
 
     // Insert the game guide into MongoDB
-    await mongo.Guide.create({
+    map.Guide[item.name] = await mongo.Guide.create({
       metaverseId: map.Metaverse.Arken.id,
       gameId: gameNumberToGameId(item.game),
-      //
       name: item.name,
       description: '',
       content: item.text,
       key: item.name,
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
-      attaachments: item.attachments,
-      //
+      attachments: item.attachments,
     })
 
     console.log(`Inserted game guide: ${item.name}`)
   }
 }
 
-// async function migrateGuides() {
-//   for (const item of gameInfo) {
-//
-
-//     // {
-//     //   "uuid": "reci6117DNFmvidls",
-//     //   "name": "Introduction",
-//     //   "text": "Rune: Infinite is a 2D Arena Brawler, the third game in the Arken ecosystem. The game demonstrates the seamless integration of NFT items into skill-based PvP gameplay and provides players with an exhilarating and challenging experience.\n\n\n",
-//     //   "game": 3,
-//     //   "isEnabled": true,
-//     //   "attachments": []
-//     // },
-//     await prisma.gameGuide.create({
-//       data: {
-//         metaverseId: map.Metaverse.Arken.id,
-//         gameId: gameNumberToGameId(item.game),
-//
-//         name: item.name,
-//         description: '',
-//         content: item.text,
-//         key: item.name,
-//         meta: item,
-//         status: item.isEnabled ? 'Active' : 'Pending',
-//
-//       },
-//     })
-//   }
-// }
-
 async function migrateCharacterClasses() {
   for (const item of characterClasses) {
+    map.CharacterClass[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.CharacterClass.findOne({ name: item.name })
-    if (existingItem) continue
+    map.CharacterClass[item.id] = await mongo.CharacterClass.findOne({ name: item.name })
 
-    const newCharacterClass = await mongo.CharacterClass.create({
+    if (map.CharacterClass[item.id]) continue
+
+    map.CharacterClass[item.id] = await mongo.CharacterClass.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -1180,19 +1297,18 @@ async function migrateCharacterClasses() {
       meta: item,
       status: item.isPlayable ? 'Active' : 'Pending',
     })
-
-    await newCharacterClass.save()
   }
 }
 
 async function migrateCharacterFactions() {
   for (const item of characterFactions) {
+    oldmap.CharacterFaction[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.CharacterFaction.findOne({ name: item.name })
-    if (existingItem) continue
+    map.CharacterFaction[item.id] = await mongo.CharacterFaction.findOne({ name: item.name })
+    if (map.CharacterFaction[item.id]) continue
 
-    const newCharacterFaction = await mongo.CharacterFaction.create({
+    map.CharacterFaction[item.id] = await mongo.CharacterFaction.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -1200,8 +1316,6 @@ async function migrateCharacterFactions() {
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
     })
-
-    await newCharacterFaction.save()
   }
 }
 
@@ -1249,6 +1363,7 @@ async function migrateCharacterFactions() {
 
 async function migrateAreaNameChoices() {
   for (const item of areaNameChoices) {
+    oldmap.AreaNameChoice[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.AreaNameChoice.findOne({ name: item.name })
@@ -1268,6 +1383,7 @@ async function migrateAreaNameChoices() {
 
 async function migrateCharacterNameChoices() {
   for (const item of characterNameChoices) {
+    oldmap.CharacterNameChoice[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.CharacterNameChoice.findOne({ name: item.name })
@@ -1328,6 +1444,7 @@ async function migrateCharacterNameChoices() {
 
 async function migrateCharacterRaces() {
   for (const item of characterRaces) {
+    oldmap.CharacterRace[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.CharacterRace.findOne({ name: item.name })
@@ -1348,6 +1465,7 @@ async function migrateCharacterRaces() {
 
 async function migrateEnergies() {
   for (const item of energies) {
+    oldmap.Energy[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.Energy.findOne({ name: item.name })
@@ -1368,6 +1486,7 @@ async function migrateEnergies() {
 
 async function migrateNpcs() {
   for (const item of npcs) {
+    oldmap.Npc[item.id] = item
     if (!item.title) continue
 
     const existingItem = await mongo.Npc.findOne({ name: item.title })
@@ -1431,6 +1550,7 @@ async function migrateNpcs() {
 
 async function migrateBiomes() {
   for (const item of biomes) {
+    oldmap.Biome[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.Biome.findOne({ name: item.name })
@@ -1451,6 +1571,7 @@ async function migrateBiomes() {
 
 async function migrateBiomeFeatures() {
   for (const item of biomeFeatures) {
+    oldmap.BiomeFeature[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.BiomeFeature.findOne({ name: item.name })
@@ -1471,6 +1592,7 @@ async function migrateBiomeFeatures() {
 
 async function migrateItemSpecificTypes() {
   for (const item of itemSpecificTypes) {
+    oldmap.ItemSpecificType[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.ItemType.findOne({ name: item.name })
@@ -1491,6 +1613,7 @@ async function migrateItemSpecificTypes() {
 
 async function migrateItemTypes() {
   for (const item of itemTypes) {
+    oldmap.ItemType[item.id] = item
     if (!item.name) continue
 
     const existingItem = await mongo.ItemType.findOne({ name: item.name })
@@ -1759,7 +1882,7 @@ async function migrateBounties() {
     if (existingItem) continue
 
     const newBounty = await mongo.Bounty.create({
-      applicationId: map.Application.Arken.id,
+      metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.name,
@@ -1781,7 +1904,7 @@ async function migratePolls() {
     if (existingItem) continue
 
     const newPoll = await mongo.Poll.create({
-      applicationId: map.Application.Arken.id,
+      metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
       key: item.name,
@@ -2141,7 +2264,7 @@ async function migrateRaffles() {
 
   //   const raffle = await prisma.raffle.create({
   //     data: {
-  //       applicationId: map.Application.Arken.id,
+  //       metaverseId: map.Metaverse.Arken.id,
   //
   //       name: item.name,
   //       key: item.name,
@@ -2154,7 +2277,7 @@ async function migrateRaffles() {
   //   for (const reward of item.rewards) {
   //     const raffleReward = await prisma.raffleReward.create({
   //       data: {
-  //         applicationId: map.Application.Arken.id,
+  //         metaverseId: map.Metaverse.Arken.id,
   //
   //         raffleId: raffle.id,
   //         name: reward.name,
@@ -2180,7 +2303,7 @@ async function migrateRaffles() {
   //     for (const entry of raffle.entries) {
   //       const raffleEntry = await prisma.raffleEntry.create({
   //         data: {
-  //           applicationId: map.Application.Arken.id,
+  //           metaverseId: map.Metaverse.Arken.id,
   //
   //           amount: entry.amount,
   //           ownerId: entry.profileId,
@@ -2646,6 +2769,7 @@ async function main() {
 
   for (const model of Object.keys(schemas)) {
     map[model] = {}
+    oldmap[model] = {}
     mongo[model] = new ModelWrapper(Mongoose.model(model, schemas[model], model))
   }
 
@@ -2728,61 +2852,3 @@ main().catch(async e => {
   await prisma.$disconnect()
   process.exit(1)
 })
-
-//   [
-//     "Rune",
-//     "Game",
-//     "GameInfo",
-//     "Item",
-//     "ItemAttribute",
-//     "ItemRecipe",
-//     "ItemMaterial",
-//     "ItemAttributeParam",
-//     "ItemParam",
-//     "ItemSpecificType",
-//     "ItemSubType",
-//     "ItemType",
-//     "ItemAffix",
-//     "ItemSlot",
-//     "ItemRarity",
-//     "ItemSet",
-//     "ItemTransmuteRule",
-//     "Skill",
-//     "SkillMod",
-//     "SkillClassification",
-//     "SkillCondition",
-//     "SkillConditionParam",
-//     "SkillStatusEffect",
-//     "SkillTreeNode",
-//     "CharacterGuild",
-//     "CharacterRace",
-//     "CharacterGender",
-//     "CharacterFaction",
-//     "CharacterClass",
-//     "Character",
-//     "CharacterType",
-//     "CharacterAttribute",
-//     "CharacterStat",
-//     "CharacterTitle",
-//     "CharacterSpawnRule",
-//     "CharacterFightingStyle",
-//     "CharacterNameChoice",
-//     "CharacterMovementStasuse",
-//     "CharacterPersonality",
-//     "Area",
-//     "AreaType",
-//     "AreaNameChoice",
-//     "Energy",
-//     "Lore",
-//     "HistoricalRecords",
-//     "NPC",
-//     "Act",
-//     "Era",
-//     "TimeGate",
-//     "Energie",
-//     "Achievement",
-//     "Biome",
-//     "BiomeFeature",
-//     "SolarSystem",
-//     "Planet"
-// ]
