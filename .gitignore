@@ -1,7 +1,7 @@
 src/generated
 src/generatedOld
-rune.db
-rune.db.*
+arken.db
+arken.db.*
 
 build
 secrets.json

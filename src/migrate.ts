@@ -210,7 +210,7 @@ const gameNumberToGameId = (id: any) =>
   }[id])
 
 async function getGuild(oldId: any, oldGuild: any = null) {
-  if (!map.Team[oldId]) {
+  if (!map.Team[oldId] && oldGuild) {
     map.Team[oldId] = await mongo.Team.create({
       metaverseId: map.Metaverse.Arken.id,
       key: oldGuild.key,
@@ -321,13 +321,20 @@ async function migrateAccounts() {
 
   for (const oldProfile of oldProfiles) {
     // @ts-ignore
-    let newProfile = await mongo.Profile.findOne({ name: oldProfile.lastName })
+    let newProfile = await mongo.Profile.findOne({ name: oldProfile.name })
 
-    if (!newProfile) {
+    if (!newProfile && oldProfile?.name) {
       console.log(oldProfile)
       if (!map.Account[oldProfile.address]) {
         map.Account[oldProfile.address] = await mongo.Account.findOne({
-          address: oldProfile.address,
+          $or: [
+            {
+              username: oldProfile.name,
+            },
+            {
+              address: oldProfile.address,
+            },
+          ],
         })
 
         if (!map.Account[oldProfile.address]) {
@@ -351,10 +358,10 @@ async function migrateAccounts() {
       newProfile = await mongo.Profile.create({
         metaverseId: map.Metaverse.Arken.id,
         // @ts-ignore
-        name: oldProfile.lastName,
+        name: oldProfile.name,
         key: oldProfile.key,
         meta: oldProfile.meta,
-        status: oldProfile.status,
+        status: { active: 'Active' }[oldProfile.status],
         address: oldProfile.address,
         roleId: map.Role[{ user: 'User' }[oldProfile.role]].id,
         accountId: map.Account[oldProfile.address].id,
@@ -364,19 +371,33 @@ async function migrateAccounts() {
       })
 
       // @ts-ignore
-      for (const character of oldProfile.meta.characters) {
-        const newCharacter = await mongo.Character.create({
-          metaverseId: map.Metaverse.Arken.id,
-          name: character.name,
-          key: character.key,
-          meta: character,
-          status: 'Active',
-          ownerId: newProfile.id,
-        })
+      if (oldProfile?.meta?.characters) {
+        // @ts-ignore
+        console.log(oldProfile.meta.characters)
+        // @ts-ignore
+        for (const character of oldProfile.meta.characters) {
+          // need to hit BSC to figure out the characters token ID so we don't duplicate
+          map.Character[character.tokenId] = await mongo.Character.findOne({
+            token: character.tokenId,
+          })
 
-        console.log(`Inserted character with ID: ${newCharacter.id}`)
+          if (!map.Character[character.tokenId]) {
+            map.Character[character.tokenId] = await mongo.Character.create({
+              metaverseId: map.Metaverse.Arken.id,
+              name: character.name,
+              meta: character,
+              status: 'Active',
+              ownerId: newProfile.id,
+              token: character.tokenId,
+              classId: map.CharacterClass[character.id],
+            })
+            console.log(`Inserted character with token: ${character.tokenId}`)
+          }
+        }
       }
     }
+
+    process.stdout.write('\n')
 
     const achievements = jetpack.read(
       path.resolve(`../../data/users/${newProfile.address}/achievements.json`),
@@ -404,7 +425,6 @@ async function migrateAccounts() {
     )
     console.log(444, achievements, characters, evolution, inventory, market, overview)
   }
-  process.stdout.write('\n')
 }
 
 async function migrateClaims() {
@@ -412,32 +432,34 @@ async function migrateClaims() {
   for (const claimRequest of claimRequests) {
     if (!claimRequest) continue
 
-    const profile = await mongo.Profile.findOne({
-      address: claimRequest.address,
-    })
+    const profile =
+      map.Profile[claimRequest.address] ||
+      (await mongo.Profile.findOne({
+        address: claimRequest.address,
+      }))
 
     if (!profile) {
       console.log('Profile not found', claimRequest.username, claimRequest.address)
       continue
     }
 
-    const existingPayment = await mongo.Payment.findOne({
+    map.Payment[claimRequest.id] = await mongo.Payment.findOne({
       key: claimRequest.id,
     })
 
-    if (existingPayment) {
+    if (map.Payment[claimRequest.id]) {
       console.log(`Payment with key ${claimRequest.id} already exists.`)
       continue
     }
 
-    await mongo.Payment.create({
+    map.Payment[claimRequest.id] = await mongo.Payment.create({
       metaverseId: map.Metaverse.Arken.id,
       name: claimRequest.username,
       value: claimRequest.address,
       key: claimRequest.id,
       meta: claimRequest,
       status: claimRequest.status,
-      ownerId: profile._id,
+      ownerId: profile.id,
     })
 
     console.log(`Inserted claim request with ID: ${claimRequest.id}`)
@@ -479,8 +501,8 @@ async function migrateReferrals() {
     }[referral.status]
 
     await mongo.Referral.create({
-      recipientId: recipient._id,
-      senderId: sender._id,
+      recipientId: recipient.id,
+      senderId: sender.id,
       meta: referral,
       status,
     })
@@ -499,7 +521,13 @@ async function migrateAssets() {
   // @ts-ignore
   for (const item of items) {
     oldmap.Asset[item.id] = item
+
     if (!item.id) continue
+
+    if (map.Asset[item.name]) {
+      console.log('Asset ' + item.name + ' already exists')
+      continue
+    }
 
     map.Asset[item.name] = await mongo.Asset.create({
       metaverseId: map.Metaverse.Arken.id,
@@ -663,7 +691,8 @@ async function migrateTrades() {
 }
 
 async function migrateTeams() {
-  const overview = guild1OverviewData
+  console.log('Migrating guilds')
+  // const overview = guild1OverviewData
 
   // "memberCount": 54,
   // "activeMemberCount": 37,
@@ -673,35 +702,62 @@ async function migrateTeams() {
   // "icon": "https://arken.gg/images/teams/the-first-ones.png",
   // "backgroundColor": "#fff",
   // "discord": { "role": "862170863827025950", "channel": "862153263804448769" },
-  const existingTeam = await mongo.Team.findOne({ name: overview.name })
-  if (!existingTeam) {
-    await mongo.Team.create({
-      metaverseId: map.Metaverse.Arken.id,
-      name: overview.name,
-      description: overview.description,
-      key: overview.name,
-      meta: overview,
-      status: 'Active',
-    })
+  const teams = await mongo.Team.find()
+  for (const team of teams) {
+    if (!map.Team[team.name]) {
+      map.Team[team.name] = team
+      oldmap.Team[team.meta.id] = team
+    }
   }
 
-  // {
-  //   "address": "0xa94210Bce97C665aCd1474B6fC4e9817a456EECd",
-  //   "username": "kucka",
-  //   "points": 1,
-  //   "achievementCount": 1,
-  //   "isActive": true,
-  //   "characterId": 6
-  // },
-  for (const member of overview.memberDetails) {
-    const profile = await mongo.Profile.findOne({ address: member.address })
+  for (const guild of guildsData) {
+    if (oldmap.Team[guild.id]) {
+      console.log('Guild with name ' + oldmap.Team[guild.id].name + ' already exists.')
+      continue
+    }
 
-    if (profile) {
-      await mongo.Character.create({
-        profileId: profile._id,
+    const details = require('../../data/guilds/' + guild.id + '/overview.json')
+
+    map.Team[details.name] = await mongo.Team.find({ name: details.name })
+
+    if (!map.Team[details.name]) {
+      map.Team[details.name] = await mongo.Team.create({
         metaverseId: map.Metaverse.Arken.id,
-        classId: map.Class[member.characterId].id,
+        name: details.name,
+        description: details.description,
+        key: details.name,
+        meta: details,
+        status: 'Active',
       })
+    }
+
+    oldmap.Team[guild.id] = map.Team[details.name]
+
+    console.log('Guild with name ' + details.name)
+
+    const memberDetails = require('../../data/guilds/' + guild.id + '/memberDetails.json')
+
+    // {
+    //   "address": "0xa94210Bce97C665aCd1474B6fC4e9817a456EECd",
+    //   "username": "kucka",
+    //   "points": 1,
+    //   "achievementCount": 1,
+    //   "isActive": true,
+    //   "characterId": 6
+    // },
+    for (const member of memberDetails) {
+      const profile = await mongo.Profile.findOne({ address: member.address })
+
+      if (profile) {
+        console.log('Character with guild ' + details.name + ' for profile ' + member.address)
+
+        map.Character[profile.id] = await mongo.Character.create({
+          teamId: map.Team[details.name].id,
+          profileId: profile.id,
+          metaverseId: map.Metaverse.Arken.id,
+          classId: map.Class[member.characterId].id,
+        })
+      }
     }
   }
 
@@ -742,14 +798,14 @@ async function migrateAchievements() {
     if (item.icon) item.icon = item.icon.replace('undefined', '')
 
     // Check if the achievement already exists in MongoDB
-    const existingAchievement = await mongo.Achievement.findOne({ key: item.key })
-    if (existingAchievement) {
+    map.Achievement[item.key] = await mongo.Achievement.findOne({ key: item.key })
+    if (map.Achievement[item.key]) {
       console.log(`Achievement with key ${item.key} already exists.`)
       continue
     }
 
     // Insert the achievement into MongoDB
-    const newAchievement = await mongo.Achievement.create({
+    map.Achievement[item.key] = await mongo.Achievement.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -787,14 +843,14 @@ async function migrateAreas() {
     oldmap.Area[item.id] = item
 
     // Check if the area already exists in MongoDB
-    const existingArea = await mongo.Area.findOne({ name: item.name })
-    if (existingArea) {
+    map.Area[item.name] = await mongo.Area.findOne({ name: item.name })
+    if (map.Area[item.name]) {
       console.log(`Area with name ${item.name} already exists.`)
       continue
     }
 
     // Insert the area into MongoDB
-    const newArea = await mongo.Area.create({
+    map.Area[item.name] = await mongo.Area.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -802,8 +858,6 @@ async function migrateAreas() {
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
     })
-
-    await newArea.save()
 
     // "types": [18],
     // "npcs": [],
@@ -824,10 +878,14 @@ async function migrateCharacterAttributes() {
     oldmap.CharacterAttribute[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.CharacterAttribute.findOne({ name: item.name })
-    if (existingItem) continue
+    map.CharacterAttribute[item.name] = await mongo.CharacterAttribute.findOne({ name: item.name })
 
-    const newCharacterAttribute = await mongo.CharacterAttribute.create({
+    if (map.CharacterAttribute[item.name]) {
+      console.log(`Character attribute with name ${item.name} already exists.`)
+      continue
+    }
+
+    map.CharacterAttribute[item.name] = await mongo.CharacterAttribute.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -835,8 +893,6 @@ async function migrateCharacterAttributes() {
       meta: item,
       status: 'Active',
     })
-
-    await newCharacterAttribute.save()
   }
 }
 
@@ -1133,11 +1189,15 @@ async function migratePlanets() {
 
 async function migrateSolarSystems() {
   for (const item of solarSystems) {
+    map.SolarSystem[item.name] = await mongo.SolarSystem.findOne({ name: item.name })
     oldmap.SolarSystem[item.id] = item
-    const existingItem = await mongo.SolarSystem.findOne({ name: item.name })
-    if (existingItem) continue
 
-    const newSolarSystem = await mongo.SolarSystem.create({
+    if (map.SolarSystem[item.name]) {
+      console.log('SolarSystem ' + item.name + ' already exists')
+      continue
+    }
+
+    map.SolarSystem[item.name] = await mongo.SolarSystem.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -1146,17 +1206,20 @@ async function migrateSolarSystems() {
       status: item.isEnabled ? 'Active' : 'Pending',
     })
 
-    await newSolarSystem.save()
+    oldmap.SolarSystem[item.id] = item
   }
 }
 
 async function migrateLore() {
   for (const item of lore) {
     oldmap.Lore[item.id] = item
-    const existingItem = await mongo.Lore.findOne({ name: item.name })
-    if (existingItem) continue
+    map.Lore[item.name] = await mongo.Lore.findOne({ name: item.name })
+    if (map.Lore[item.name]) {
+      console.log('Lore ' + item.name + ' already exists')
+      continue
+    }
 
-    const newLore = await mongo.Lore.create({
+    map.Lore[item.name] = await mongo.Lore.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -1164,8 +1227,6 @@ async function migrateLore() {
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
     })
-
-    await newLore.save()
   }
 }
 
@@ -1183,7 +1244,7 @@ async function migrateGames() {
     // "shortDescription": "Rune is an addicting dark fantasy RPG. Play and earn runes (crypto) battling players and AI. Use runes to craft gear (NFTs) to make your character more powerful.",
     // "description": "The Future DeFi and Gaming Ecosystem\n\nHybrid gaming ecosystem which utilizes NFT game assets, seamless integration into a conventional game.\n",
     // "storyline": "",
-    // "cmcDescription": "## What Is Rune (RUNE)?\n\n[Rune](https://coinmarketcap.com/currencies/rune/) is an open-ended dark fantasy gaming universe built on [Binance Smart Chain](https://coinmarketcap.com/alexandria/article/what-is-binance-smart-chain), where players can battle, join a guild, collect powerful weapons, and earn [NFTs](https://coinmarketcap.com/alexandria/glossary/non-fungible-token) and cryptocurrency in the form of runes by playing.\n\nRunes are small and rare stones inscribed with magical glyphs needed to craft Runewords (NFTs), weapons, and armor. 33 different Runes are distributed to players over two years. Each Rune has a supply of 100,000 or less, and players can earn Runes by competing against other players, joining guilds, participating in yield farms, and community participation.\n\nThe Rune universe consists of Second Wind, a play-to-earn game, Rune Farm, the yield farm, Runewords (NFTs), and the Infinite Arena Arena, a player-versus-player game. The team is also developing the Heart of the Oasis, an MMORPG that will be launched in 2022. Currently, Rune is running on BSC, but the team sees the universe as blockchain-agnostic and is building a bridge to [Polygon](https://coinmarketcap.com/currencies/polygon/).\n\n## Who Are the Founders of Rune?\n\nRune’s founders are anonymous. The team chose to stay anonymous to protect itself, its associates, and users from “archaic legislation imposed by governments who won’t understand the emerging DeFi field for years to come.” The team alludes to “Binzy,” which is their fill-in for the person(s) behind Rune, a real software engineer with 20 years of experience and connections in the crypto world.\nIn total, the team consists of 12 people: the lead dev, four unity developers, a React developer, a Solidity developer, two consultant developers, two consultant project managers, one marketing manager, one community manager, four mods and some advisors.\n\n## What Makes Rune Unique?\n\nRune offers an attractive mix of blockchain gaming, NFTs, and elements from decentralized finance. Its universe is split into four different parts.\n\nSecond Wind is a play-to-earn game and was the first game built for the ecosystem. You start as a dragonling that can fly around and eat sprites to evolve into a dragon eventually. One round in the web browser-based game lasts five minutes, and players can earn crypto as a reward.\n\nRune Farm is the yield farm that attracts liquidity to the ecosystem. You can acquire runes through providing liquidity and raiding farms, i.e., yield farming. The team promises that since the supply of runes is limited, their price should find a bottom. Moreover, each rune has its specific utility, and runes can also be combined to build Runewords. Furthermore, for 2022, an online RPG built around runes is in development.\n\nRunewords (NFTs) are unique weapons and armor. Each Runeword is suitable for a specific hero class (seven different hero classes exist) or style of play. Runewords improve a hero’s capabilities in battle and offer improved farming and merchant abilities. Runewords are shared, collected, and traded in the Rune Market and players will soon be able to lend them to others. Runewords are crafted from runes.\n\nFinally, the Infinite Arena Arena is a player-versus-player, web-based 2D topdown game, where you battle your opponents for prizes. Once you defeat an opponent, they go back to the beginning while you can continue the path that goes on infinitely. The last one standing after one minute of battle claims a reward in the form of crypto or NFTs. Every 15 minutes, you enter a new arena.\n",
+    // "cmcDescription": "## What Is Rune (RUNE)?\n\n[Rune](https://coinmarketcap.com/currencies/rune/) is an open-ended dark fantasy gaming universe built on [Binance Smart Chain](https://coinmarketcap.com/alexandria/article/what-is-binance-smart-chain), where players can battle, join a guild, collect powerful weapons, and earn [NFTs](https://coinmarketcap.com/alexandria/glossary/non-fungible-token) and cryptocurrency in the form of runes by playing.\n\nRunes are small and rare stones inscribed with magical glyphs needed to craft Runewords (NFTs), weapons, and armor. 33 different Runes are distributed to players over two years. Each Rune has a supply of 100,000 or less, and players can earn Runes by competing against other players, joining guilds, participating in yield farms, and community participation.\n\nThe Rune universe consists of Second Wind, a play-to-earn game, Arken: Runic Raids, the yield farm, Runewords (NFTs), and the Infinite Arena Arena, a player-versus-player game. The team is also developing the Heart of the Oasis, an MMORPG that will be launched in 2022. Currently, Rune is running on BSC, but the team sees the universe as blockchain-agnostic and is building a bridge to [Polygon](https://coinmarketcap.com/currencies/polygon/).\n\n## Who Are the Founders of Rune?\n\nRune’s founders are anonymous. The team chose to stay anonymous to protect itself, its associates, and users from “archaic legislation imposed by governments who won’t understand the emerging DeFi field for years to come.” The team alludes to “Binzy,” which is their fill-in for the person(s) behind Rune, a real software engineer with 20 years of experience and connections in the crypto world.\nIn total, the team consists of 12 people: the lead dev, four unity developers, a React developer, a Solidity developer, two consultant developers, two consultant project managers, one marketing manager, one community manager, four mods and some advisors.\n\n## What Makes Rune Unique?\n\nRune offers an attractive mix of blockchain gaming, NFTs, and elements from decentralized finance. Its universe is split into four different parts.\n\nSecond Wind is a play-to-earn game and was the first game built for the ecosystem. You start as a dragonling that can fly around and eat sprites to evolve into a dragon eventually. One round in the web browser-based game lasts five minutes, and players can earn crypto as a reward.\n\nArken: Runic Raids is the yield farm that attracts liquidity to the ecosystem. You can acquire runes through providing liquidity and raiding farms, i.e., yield farming. The team promises that since the supply of runes is limited, their price should find a bottom. Moreover, each rune has its specific utility, and runes can also be combined to build Runewords. Furthermore, for 2022, an online RPG built around runes is in development.\n\nRunewords (NFTs) are unique weapons and armor. Each Runeword is suitable for a specific hero class (seven different hero classes exist) or style of play. Runewords improve a hero’s capabilities in battle and offer improved farming and merchant abilities. Runewords are shared, collected, and traded in the Arken Market and players will soon be able to lend them to others. Runewords are crafted from runes.\n\nFinally, the Infinite Arena Arena is a player-versus-player, web-based 2D topdown game, where you battle your opponents for prizes. Once you defeat an opponent, they go back to the beginning while you can continue the path that goes on infinitely. The last one standing after one minute of battle claims a reward in the form of crypto or NFTs. Every 15 minutes, you enter a new arena.\n",
     // "contracts": "- [0x4596e527eba13a27cd02576d023695eab0a6b210](https://www.bscscan.com/address/0x4596e527eba13a27cd02576d023695eab0a6b210)\n- BSC\n- [0x5fE24631136D570D12920C9Fa0FEcaDA84E47673](https://www.bscscan.com/address/0x5fE24631136D570D12920C9Fa0FEcaDA84E47673)\n- BSC\n- [0xB615023dfa06944B06c4caDB308E6009907E8f4d](https://www.bscscan.com/address/0xB615023dfa06944B06c4caDB308E6009907E8f4d)\n- BSC\n- [0xdAE69A43bC73e662095b488dbDDD1D3aBA59c1FF](https://www.bscscan.com/address/0xdAE69A43bC73e662095b488dbDDD1D3aBA59c1FF)\n- BSC\n- [0xe97a1b9f5d4b849f0d78f58adb7dd91e90e0fb40](https://www.bscscan.com/address/0xe97a1b9f5d4b849f0d78f58adb7dd91e90e0fb40)\n- BSC\n- [0xa9776b590bfc2f956711b3419910a5ec1f63153e](https://www.bscscan.com/address/0xa9776b590bfc2f956711b3419910a5ec1f63153e)\n- BSC\n- [0xcfA857d6EC2F59b050D7296FbcA8a91D061451f3](https://www.bscscan.com/address/0xcfA857d6EC2F59b050D7296FbcA8a91D061451f3)\n- BSC\n- [0x6122F8500e7d602629FeA714FEA33BC2B2e0E2ac](https://www.bscscan.com/address/0x6122F8500e7d602629FeA714FEA33BC2B2e0E2ac)\n- BSC\n- [0x3e151ca82b3686f555c381530732df1cfc3c7890](https://www.bscscan.com/address/0x3e151ca82b3686f555c381530732df1cfc3c7890)\n- BSC\n- [0x2a74b7d7d44025bcc344e7da80d542e7b0586330](https://www.bscscan.com/address/0x2a74b7d7d44025bcc344e7da80d542e7b0586330)\n- BSC\n- [0x60e3538610e9f4974a36670842044cb4936e5232](https://www.bscscan.com/address/0x60e3538610e9f4974a36670842044cb4936e5232)\n- BSC\n- [0x2098fef7eeae592038f4f3c4b008515fed0d5886](https://www.bscscan.com/address/0x2098fef7eeae592038f4f3c4b008515fed0d5886)\n- BSC\n\n"
 
     // to:
@@ -1266,21 +1327,21 @@ async function migrateGuides() {
     // "isEnabled": true,
     // "attachments": []
     // Check if the game guide already exists in MongoDB
-    map.Guide[item.name] = await mongo.Guide.find({ name: item.name }).exec()
+    map.Guide[item.uuid] = await mongo.Guide.findOne({ key: item.uuid }).exec()
 
-    if (map.Guide[item.name]) {
-      console.log(`Game guide with name ${item.name} already exists.`)
+    if (map.Guide[item.uuid]) {
+      console.log(`Guide with name ${item.name} already exists.`)
       continue
     }
 
     // Insert the game guide into MongoDB
-    map.Guide[item.name] = await mongo.Guide.create({
+    map.Guide[item.uuid] = await mongo.Guide.create({
       metaverseId: map.Metaverse.Arken.id,
       gameId: gameNumberToGameId(item.game),
       name: item.name,
       description: '',
       content: item.text,
-      key: item.name,
+      key: item.uuid,
       meta: item,
       status: item.isEnabled ? 'Active' : 'Pending',
       attachments: item.attachments,
@@ -1292,12 +1353,14 @@ async function migrateGuides() {
 
 async function migrateCharacterClasses() {
   for (const item of characterClasses) {
-    map.CharacterClass[item.id] = item
     if (!item.name) continue
 
     map.CharacterClass[item.id] = await mongo.CharacterClass.findOne({ name: item.name })
 
-    if (map.CharacterClass[item.id]) continue
+    if (map.CharacterClass[item.name]) {
+      console.log('CharacterClass ' + item.name + ' already exists')
+      continue
+    }
 
     map.CharacterClass[item.id] = await mongo.CharacterClass.create({
       metaverseId: map.Metaverse.Arken.id,
@@ -1312,11 +1375,13 @@ async function migrateCharacterClasses() {
 
 async function migrateCharacterFactions() {
   for (const item of characterFactions) {
-    oldmap.CharacterFaction[item.id] = item
     if (!item.name) continue
 
     map.CharacterFaction[item.id] = await mongo.CharacterFaction.findOne({ name: item.name })
-    if (map.CharacterFaction[item.id]) continue
+    if (map.CharacterFaction[item.name]) {
+      console.log('CharacterFaction ' + item.name + ' already exists')
+      continue
+    }
 
     map.CharacterFaction[item.id] = await mongo.CharacterFaction.create({
       metaverseId: map.Metaverse.Arken.id,
@@ -1373,33 +1438,39 @@ async function migrateCharacterFactions() {
 
 async function migrateAreaNameChoices() {
   for (const item of areaNameChoices) {
-    oldmap.AreaNameChoice[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.AreaNameChoice.findOne({ name: item.name })
-    if (existingItem) continue
+    map.AreaNameChoice[item.name] = await mongo.AreaNameChoice.findOne({ name: item.name })
+    if (map.AreaNameChoice[item.name]) {
+      console.log('AreaNameChoice ' + item.name + ' already exists')
+      continue
+    }
 
-    const newAreaNameChoice = await mongo.AreaNameChoice.create({
+    map.AreaNameChoice[item.name] = await mongo.AreaNameChoice.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       key: item.id + '',
       meta: item,
       status: 'Active',
     })
-
-    await newAreaNameChoice.save()
   }
 }
 
 async function migrateCharacterNameChoices() {
   for (const item of characterNameChoices) {
-    oldmap.CharacterNameChoice[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.CharacterNameChoice.findOne({ name: item.name })
-    if (existingItem) continue
+    map.CharacterNameChoice[item.name] = await mongo.CharacterNameChoice.findOne({
+      name: item.name,
+    })
+    oldmap.CharacterNameChoice[item.id] = item
 
-    const newCharacterNameChoice = await mongo.CharacterNameChoice.create({
+    if (map.CharacterNameChoice[item.name]) {
+      console.log('CharacterNameChoice ' + item.name + ' already exists')
+      continue
+    }
+
+    map.CharacterNameChoice[item.name] = await mongo.CharacterNameChoice.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       key: item.id + '',
@@ -1407,7 +1478,7 @@ async function migrateCharacterNameChoices() {
       status: 'Active',
     })
 
-    await newCharacterNameChoice.save()
+    oldmap.CharacterNameChoice[item.id] = item
   }
 }
 // async function  migrateCharacterMovementStasuses() {
@@ -1454,13 +1525,17 @@ async function migrateCharacterNameChoices() {
 
 async function migrateCharacterRaces() {
   for (const item of characterRaces) {
-    oldmap.CharacterRace[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.CharacterRace.findOne({ name: item.name })
-    if (existingItem) continue
+    map.CharacterRace[item.name] = await mongo.CharacterRace.findOne({ name: item.name })
+    oldmap.CharacterRace[item.id] = item
 
-    const newCharacterRace = await mongo.CharacterRace.create({
+    if (map.CharacterRace[item.name]) {
+      console.log('CharacterRace ' + item.name + ' already exists')
+      continue
+    }
+
+    map.CharacterRace[item.name] = await mongo.CharacterRace.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -1469,19 +1544,22 @@ async function migrateCharacterRaces() {
       status: item.isPlayable ? 'Active' : 'Pending',
     })
 
-    await newCharacterRace.save()
+    oldmap.CharacterRace[item.id] = map.CharacterRace[item.name]
   }
 }
 
 async function migrateEnergies() {
   for (const item of energies) {
-    oldmap.Energy[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.Energy.findOne({ name: item.name })
-    if (existingItem) continue
+    map.Energy[item.name] = await mongo.Energy.findOne({ name: item.name })
 
-    const newEnergy = await mongo.Energy.create({
+    if (map.Energy[item.name]) {
+      console.log('Energy ' + item.name + ' already exists')
+      continue
+    }
+
+    map.Energy[item.name] = await mongo.Energy.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -1490,19 +1568,21 @@ async function migrateEnergies() {
       status: 'Active',
     })
 
-    await newEnergy.save()
+    oldmap.Energy[item.id] = map.Energy[item.name]
   }
 }
 
 async function migrateNpcs() {
   for (const item of npcs) {
-    oldmap.Npc[item.id] = item
     if (!item.title) continue
 
-    const existingItem = await mongo.Npc.findOne({ name: item.title })
-    if (existingItem) continue
+    map.Npc[item.title] = await mongo.Npc.findOne({ name: item.title })
+    if (map.Npc[item.title]) {
+      console.log('NPC ' + item.title + ' already exists')
+      continue
+    }
 
-    const newNpc = await mongo.Npc.create({
+    map.Npc[item.title] = await mongo.Npc.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.title,
       description: item.description,
@@ -1511,7 +1591,7 @@ async function migrateNpcs() {
       status: item.isEnabled ? 'Active' : 'Pending',
     })
 
-    await newNpc.save()
+    oldmap.Npc[item.id] = map.Npc[item.title]
   }
 }
 
@@ -1560,13 +1640,17 @@ async function migrateNpcs() {
 
 async function migrateBiomes() {
   for (const item of biomes) {
-    oldmap.Biome[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.Biome.findOne({ name: item.name })
-    if (existingItem) continue
+    map.Biome[item.name] = await mongo.Biome.findOne({ name: item.name })
+    oldmap.Biome[item.id] = map.Biome[item.name]
 
-    const newBiome = await mongo.Biome.create({
+    if (map.Biome[item.name]) {
+      console.log('Biome ' + item.name + ' already exists')
+      continue
+    }
+
+    map.Biome[item.name] = await mongo.Biome.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -1575,19 +1659,23 @@ async function migrateBiomes() {
       status: 'Active',
     })
 
-    await newBiome.save()
+    oldmap.Biome[item.id] = map.Biome[item.name]
   }
 }
 
 async function migrateBiomeFeatures() {
   for (const item of biomeFeatures) {
-    oldmap.BiomeFeature[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.BiomeFeature.findOne({ name: item.name })
-    if (existingItem) continue
+    map.BiomeFeature[item.name] = await mongo.BiomeFeature.findOne({ name: item.name })
+    oldmap.BiomeFeature[item.id] = map.BiomeFeature[item.name]
 
-    const newBiomeFeature = await mongo.BiomeFeature.create({
+    if (map.BiomeFeature[item.name]) {
+      console.log('BiomeFeature ' + item.name + ' already exists')
+      continue
+    }
+
+    map.BiomeFeature[item.name] = await mongo.BiomeFeature.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1596,19 +1684,23 @@ async function migrateBiomeFeatures() {
       status: 'Active',
     })
 
-    await newBiomeFeature.save()
+    oldmap.BiomeFeature[item.id] = map.BiomeFeature[item.name]
   }
 }
 
 async function migrateItemSpecificTypes() {
   for (const item of itemSpecificTypes) {
-    oldmap.ItemSpecificType[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.ItemType.findOne({ name: item.name })
-    if (existingItem) continue
+    map.ItemSpecificType[item.name] = await mongo.ItemType.findOne({ name: item.name })
+    oldmap.ItemSpecificType[item.id] = map.ItemSpecificType[item.name]
 
-    const newItemSpecificType = await mongo.ItemType.create({
+    if (map.ItemSpecificType[item.name]) {
+      console.log('Item specificType ' + item.name + ' already exists')
+      continue
+    }
+
+    map.ItemSpecificType[item.name] = await mongo.ItemType.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1617,19 +1709,23 @@ async function migrateItemSpecificTypes() {
       status: 'Active',
     })
 
-    await newItemSpecificType.save()
+    oldmap.ItemSpecificType[item.id] = map.ItemSpecificType[item.name]
   }
 }
 
 async function migrateItemTypes() {
   for (const item of itemTypes) {
-    oldmap.ItemType[item.id] = item
     if (!item.name) continue
 
-    const existingItem = await mongo.ItemType.findOne({ name: item.name })
-    if (existingItem) continue
+    map.ItemType[item.name] = await mongo.ItemType.findOne({ name: item.name })
+    oldmap.ItemType[item.id] = map.ItemType[item.name]
 
-    const newItemType = await mongo.ItemType.create({
+    if (map.ItemType[item.name]) {
+      console.log('Item type ' + item.name + ' already exists')
+      continue
+    }
+
+    map.ItemType[item.name] = await mongo.ItemType.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1638,7 +1734,7 @@ async function migrateItemTypes() {
       status: 'Active',
     })
 
-    await newItemType.save()
+    oldmap.ItemType[item.id] = map.ItemType[item.name]
   }
 }
 
@@ -1694,10 +1790,15 @@ async function migrateItemSlots() {
   for (const item of itemSlots) {
     if (!item.name) continue
 
-    const existingItem = await mongo.ItemSlot.findOne({ name: item.name })
-    if (existingItem) continue
+    map.ItemSlot[item.name] = await mongo.ItemSlot.findOne({ name: item.name })
+    oldmap.ItemSlot[item.id] = map.ItemSlot[item.name]
 
-    const newItemSlot = await mongo.ItemSlot.create({
+    if (map.ItemSlot[item.name]) {
+      console.log('Item slot ' + item.name + ' already exists')
+      continue
+    }
+
+    map.ItemSlot[item.name] = await mongo.ItemSlot.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1706,7 +1807,7 @@ async function migrateItemSlots() {
       status: 'Active',
     })
 
-    await newItemSlot.save()
+    oldmap.ItemSlot[item.id] = map.ItemSlot[item.name]
   }
 }
 
@@ -1714,10 +1815,15 @@ async function migrateItemSubTypes() {
   for (const item of itemSubTypes) {
     if (!item.name) continue
 
-    const existingItem = await mongo.ItemSubType.findOne({ name: item.name })
-    if (existingItem) continue
+    map.ItemSubType[item.name] = await mongo.ItemSubType.findOne({ name: item.name })
+    oldmap.ItemSubType[item.id] = map.ItemSubType[item.name]
 
-    const newItemSubType = await mongo.ItemSubType.create({
+    if (map.ItemSubType[item.name]) {
+      console.log('Item subtype ' + item.name + ' already exists')
+      continue
+    }
+
+    map.ItemSubType[item.name] = await mongo.ItemSubType.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1726,7 +1832,7 @@ async function migrateItemSubTypes() {
       status: 'Active',
     })
 
-    await newItemSubType.save()
+    oldmap.ItemSubType[item.id] = map.ItemSubType[item.name]
   }
 }
 
@@ -1736,10 +1842,13 @@ async function migrateItemMaterials() {
   for (const item of itemMaterials) {
     if (!item.name) continue
 
-    const existingItem = await mongo.ItemMaterial.findOne({ name: item.name })
-    if (existingItem) continue
+    map.ItemMaterial[item.name] = await mongo.ItemMaterial.findOne({ name: item.name })
+    if (map.ItemMaterial[item.name]) {
+      console.log('Item material ' + item.name + ' already exists')
+      continue
+    }
 
-    const newItemMaterial = await mongo.ItemMaterial.create({
+    map.ItemMaterial[item.name] = await mongo.ItemMaterial.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1747,8 +1856,6 @@ async function migrateItemMaterials() {
       meta: item,
       status: 'Active',
     })
-
-    await newItemMaterial.save()
   }
 }
 
@@ -1756,10 +1863,13 @@ async function migrateItemRarities() {
   for (const item of itemRarities) {
     if (!item.name) continue
 
-    const existingItem = await mongo.ItemRarity.findOne({ name: item.name })
-    if (existingItem) continue
+    map.ItemRarity[item.name] = await mongo.ItemRarity.findOne({ name: item.name })
+    if (map.ItemRarity[item.name]) {
+      console.log('Item rarity ' + item.name + ' already exists')
+      continue
+    }
 
-    const newItemRarity = await mongo.ItemRarity.create({
+    map.ItemRarity[item.name] = await mongo.ItemRarity.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1767,8 +1877,6 @@ async function migrateItemRarities() {
       meta: item,
       status: 'Active',
     })
-
-    await newItemRarity.save()
   }
 }
 
@@ -1778,10 +1886,13 @@ async function migrateItemRecipes() {
   for (const item of itemRecipes) {
     if (!item.name) continue
 
-    const existingItem = await mongo.ItemRecipe.findOne({ name: item.name })
-    if (existingItem) continue
+    map.ItemRecipe[item.name] = await mongo.ItemRecipe.findOne({ name: item.name })
+    if (map.ItemRecipe[item.name]) {
+      console.log('Item recipe ' + item.name + ' already exists')
+      continue
+    }
 
-    const newItemRecipe = await mongo.ItemRecipe.create({
+    map.ItemRecipe[item.name] = await mongo.ItemRecipe.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1789,8 +1900,6 @@ async function migrateItemRecipes() {
       meta: item,
       status: 'Active',
     })
-
-    await newItemRecipe.save()
   }
 }
 
@@ -1798,10 +1907,13 @@ async function migrateItemSets() {
   for (const item of itemSets) {
     if (!item.name) continue
 
-    const existingItem = await mongo.ItemSet.findOne({ name: item.name })
-    if (existingItem) continue
+    map.ItemSet[item.name] = await mongo.ItemSet.findOne({ name: item.name })
+    if (map.ItemSet[item.name]) {
+      console.log('Item set ' + item.name + ' already exists')
+      continue
+    }
 
-    const newItemSet = await mongo.ItemSet.create({
+    map.ItemSet[item.name] = await mongo.ItemSet.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1809,8 +1921,6 @@ async function migrateItemSets() {
       meta: item,
       status: 'Active',
     })
-
-    await newItemSet.save()
   }
 }
 
@@ -1820,10 +1930,13 @@ async function migrateItemAttributes() {
   for (const item of itemAttributes) {
     if (!item.name) continue
 
-    const existingItem = await mongo.ItemAttribute.findOne({ name: item.name })
-    if (existingItem) continue
+    map.ItemAttribute[item.name] = await mongo.ItemAttribute.findOne({ name: item.name })
+    if (map.ItemAttribute[item.name]) {
+      console.log('Item attribute ' + item.name + ' already exists')
+      continue
+    }
 
-    const newItemAttribute = await mongo.ItemAttribute.create({
+    map.ItemAttribute[item.name] = await mongo.ItemAttribute.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: '',
@@ -1831,8 +1944,6 @@ async function migrateItemAttributes() {
       meta: item,
       status: 'Active',
     })
-
-    await newItemAttribute.save()
   }
 }
 
@@ -1870,7 +1981,7 @@ async function migrateBounties() {
     {
       name: 'List Second Wind on various game listing sites',
       reward: '50 ZOD',
-      status: 'paused', // 'Paused. Wait for Evo 2 and free account system.',
+      status: 'Paused', // 'Paused. Wait for Evo 2 and free account system.',
       claimedBy: 'Nobody yet.',
       description:
         'We would like Second Wind listed across as many gaming sites as possible. A minimum of 20 high-quality sites would be best.',
@@ -1878,7 +1989,7 @@ async function migrateBounties() {
     {
       name: 'Categorize AI generated items into mythic/epic/rare/magical',
       reward: '2 ZOD per item',
-      status: 'paused', //'Paused. Wait for more items to be generated (October).',
+      status: 'Paused', //'Paused. Wait for more items to be generated (October).',
       claimedBy: 'Nobody yet.',
       description:
         'We need help determining the quality of the AI at generated for our Runeword items. Mythics would be the most unique and high quality. Epics would be high quality and slightly unique or a bit less quality but very unique. Rare would be high quality and not unique at all, or low quality and very unique. Magical would be a mix of low quality or low uniqueness, but with some nice ones spread in there for RNG.\n\nThe operation is easy on a technical level, simply download a ZIP folder of the items and move them to the folder based on your judgment.',
@@ -1888,10 +1999,13 @@ async function migrateBounties() {
   for (const item of bounties) {
     if (!item.name) continue
 
-    const existingItem = await mongo.Bounty.findOne({ name: item.name })
-    if (existingItem) continue
+    map.Bounty[item.name] = await mongo.Bounty.findOne({ name: item.name })
+    if (map.Bounty[item.name]) {
+      console.log('Bounty ' + item.name + ' already exists')
+      continue
+    }
 
-    const newBounty = await mongo.Bounty.create({
+    map.Bounty[item.name] = await mongo.Bounty.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -1899,8 +2013,6 @@ async function migrateBounties() {
       meta: item,
       status: item.status,
     })
-
-    await newBounty.save()
   }
 }
 
@@ -1910,10 +2022,13 @@ async function migratePolls() {
   for (const item of polls) {
     if (!item.name) continue
 
-    const existingItem = await mongo.Poll.findOne({ name: item.name })
-    if (existingItem) continue
+    map.Poll[item.name] = await mongo.Poll.findOne({ name: item.name })
+    if (map.Poll[item.name]) {
+      console.log('Poll ' + item.name + ' already exists')
+      continue
+    }
 
-    const newPoll = await mongo.Poll.create({
+    map.Poll[item.name] = await mongo.Poll.create({
       metaverseId: map.Metaverse.Arken.id,
       name: item.name,
       description: item.description,
@@ -1921,8 +2036,6 @@ async function migratePolls() {
       meta: item,
       status: 'Active',
     })
-
-    await newPoll.save()
   }
 }
 
@@ -1952,12 +2065,12 @@ async function migrateRaffles() {
   const raffles = [
     {
       name: '#1 (August, 2022)',
-      status: 'done',
+      status: 'Finished',
       rewards: [
         {
           name: `50 Zavox Tickets`,
           key: '50-zavox',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Matheus'),
           entries: [
@@ -1972,7 +2085,7 @@ async function migrateRaffles() {
         {
           name: `Giveaway Item`,
           key: 'giveaway-item',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('SamKouCaille'),
           entries: [
@@ -1986,7 +2099,7 @@ async function migrateRaffles() {
         {
           name: `Diablo 2 Item`,
           key: 'd2-item',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Riccardo'),
           entries: [
@@ -2001,7 +2114,7 @@ async function migrateRaffles() {
         {
           name: `Zavox Ticket`,
           key: '1-zavox',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Matheus'),
           entries: [
@@ -2014,7 +2127,7 @@ async function migrateRaffles() {
         {
           name: `Character Slot Redemption Scroll`,
           key: 'character-slot',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Matheus'),
           entries: [
@@ -2028,7 +2141,7 @@ async function migrateRaffles() {
         {
           name: `Dev Fee Acquisition`,
           key: 'dev-fee',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [{ raffleRequirement: { key: 'noWinsThisYear' } }],
           winnerId: await findProfileIdByUsername('Maiev'),
           entries: [
@@ -2043,12 +2156,12 @@ async function migrateRaffles() {
     },
     {
       name: '#2 (September, 2022)',
-      status: 'done',
+      status: 'Finished',
       rewards: [
         {
           name: `20 Zavox Tickets`,
           key: '20-zavox',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Monk'),
           entries: [
@@ -2066,7 +2179,7 @@ async function migrateRaffles() {
         {
           name: `Giveaway Item`,
           key: 'giveaway-item',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Lazy'),
           entries: [
@@ -2078,7 +2191,7 @@ async function migrateRaffles() {
         {
           name: `$100 Cash`,
           key: '100-cash',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [
             {
               raffleRequirement: {
@@ -2097,7 +2210,7 @@ async function migrateRaffles() {
         {
           name: `Zavox Ticket`,
           key: '1-zavox',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Matheus'),
           entries: [
@@ -2112,7 +2225,7 @@ async function migrateRaffles() {
         {
           name: `Character Slot Redemption Scroll`,
           key: 'character-slot',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Disco'),
           entries: [
@@ -2127,7 +2240,7 @@ async function migrateRaffles() {
         {
           name: `Dev Fee Acquisition`,
           key: 'dev-fee',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [
             { raffleRequirement: { key: 'won1Previous' } },
             { raffleRequirement: { key: 'noWinsThisYear' } },
@@ -2139,7 +2252,7 @@ async function migrateRaffles() {
         {
           name: `Binzy's Blessing`,
           key: 'binzy-blessing',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Disco'),
           entries: [
@@ -2154,7 +2267,7 @@ async function migrateRaffles() {
         {
           name: `General's Medallion`,
           key: 'medallion',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Disco'),
           entries: [
@@ -2169,7 +2282,7 @@ async function migrateRaffles() {
         {
           name: `Character`,
           key: 'character',
-          status: 'done',
+          status: 'Finished',
           raffleRequirementsOnRaffleRewards: [],
           winnerId: await findProfileIdByUsername('Maiev'),
           entries: [
@@ -2185,12 +2298,12 @@ async function migrateRaffles() {
     },
     {
       name: '#3 (October, 2023)',
-      status: 'pending',
+      status: 'Pending',
       rewards: [
         {
           name: `50 Zavox Tickets`,
           key: '50-zavox',
-          status: 'pending',
+          status: 'Pending',
           raffleRequirementsOnRaffleRewards: [],
           entries: [],
           content: `That's a lot of Zavox, think of the possibilities...`,
@@ -2198,7 +2311,7 @@ async function migrateRaffles() {
         {
           name: `Giveaway Item`,
           key: 'giveaway-item',
-          status: 'pending',
+          status: 'Pending',
           raffleRequirementsOnRaffleRewards: [],
           entries: [],
           content: `Item from the Giveaway Wallet that wasn't given away. Time to search the inventory..`,
@@ -2206,7 +2319,7 @@ async function migrateRaffles() {
         {
           name: `$50 Cash`,
           key: '50-cash',
-          status: 'pending',
+          status: 'Pending',
           entries: [],
           raffleRequirementsOnRaffleRewards: { raffleRequirement: { key: 'won1PreviousReward' } },
           content: `We're talking cold hard cash here...`,
@@ -2214,7 +2327,7 @@ async function migrateRaffles() {
         {
           name: `Zavox Ticket`,
           key: '1-zavox',
-          status: 'pending',
+          status: 'Pending',
           raffleRequirementsOnRaffleRewards: [],
           entries: [],
           content: `You definitely like RNG.`,
@@ -2222,7 +2335,7 @@ async function migrateRaffles() {
         {
           name: `Character Slot Redemption Scroll`,
           key: 'character-slot',
-          status: 'pending',
+          status: 'Pending',
           raffleRequirementsOnRaffleRewards: [],
           entries: [],
           content: `This is the same scroll that's transmuted using 1 ZOD.`,
@@ -2230,14 +2343,14 @@ async function migrateRaffles() {
         {
           name: `Dev Fee Acquisition`,
           key: 'dev-fee',
-          status: 'pending',
+          status: 'Pending',
           entries: [],
           content: `You'll receive 0.1% of all RXS transactions for the next month. Yum.`,
         },
         {
           name: `Binzy's Blessing`,
           key: 'binzy-blessing',
-          status: 'pending',
+          status: 'Pending',
           raffleRequirementsOnRaffleRewards: [],
           entries: [],
           content: `You'll receive one random item from Binzy.`,
@@ -2245,7 +2358,7 @@ async function migrateRaffles() {
         {
           name: `General's Medallion`,
           key: 'medallion',
-          status: 'pending',
+          status: 'Pending',
           raffleRequirementsOnRaffleRewards: [],
           entries: [],
           content: `You'll receive one Magical General's Medallion.`,
@@ -2253,7 +2366,7 @@ async function migrateRaffles() {
         {
           name: `Character`,
           key: 'character',
-          status: 'pending',
+          status: 'Pending',
           raffleRequirementsOnRaffleRewards: [],
           entries: [],
           content: `You'll receive one Rune character (choose your class).`,
@@ -2786,6 +2899,7 @@ async function main() {
   await createOmniverse() //
   await migrateCharacterAttributes() //
   await migrateGuides() //
+
   await migrateAssets() //
   await migrateItemAttributes() //
   await migrateItemRecipes() //
@@ -2839,11 +2953,11 @@ async function main() {
   await migrateSolarSystems()
   await migratePlanets()
 
+  await migrateTeams()
   await migrateAccounts()
   await migrateClaims()
   // await migrateGameItems()
   await migrateTrades()
-  await migrateTeams()
   await migrateReferrals()
   await migrateBounties()
   await migrateRaffles()
