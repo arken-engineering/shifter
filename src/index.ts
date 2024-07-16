@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv'
-import { log, isDebug } from '@arken/web-sdk/util'
-import { subProcesses, catchExceptions } from '@arken/web-sdk/util/process'
+import { log, isDebug } from '@arken/node/util'
+import { subProcesses, catchExceptions } from '@arken/node/util/process'
 import { initConfig } from './modules/config'
 
 dotenv.config()

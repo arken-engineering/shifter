@@ -12,7 +12,7 @@
     "clean": "rm forever-script-err.log && rm forever-script-log.log && rm forever-script-out.log && rm nohup.out"
   },
   "engine": {
-    "node": "18.15.0"
+    "node": "18.16.1"
   },
   "devDependencies": {
     "@prisma/client": "^4.11.0",
@@ -25,7 +25,6 @@
     "ncp": "^2.0.0",
     "prisma": "^4.11.0",
     "reflect-metadata": "0.1.13",
-    "rune-backend-sdk": "^1.2.63",
     "tslib": "~2.6.0",
     "tsnd": "^1.0.2",
     "type-graphql": "2.0.0-beta.2",
@@ -33,7 +32,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@arken/node": "^1.4.1",
+    "@arken/node": "^1.4.6",
     "dayjs": "^1.11.11",
     "ethers": "^6.13.1",
     "fs-jetpack": "^5.1.0",

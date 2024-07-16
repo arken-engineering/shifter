@@ -120,10 +120,10 @@
   dependencies:
     xss "^1.0.8"
 
-"@arken/node@^1.4.1":
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/@arken/node/-/node-1.4.1.tgz#1e7e0ad857899058fd54a2d0f41036915b0a6174"
-  integrity sha512-zynEnLJH0PK/2tm665DTNY+CJEEuc4mNivE9R75ZB618lYQ/jSKz5SRnk2yzTa2dOju48epNOJ0p/PIBhuFWHA==
+"@arken/node@^1.4.6":
+  version "1.4.6"
+  resolved "https://registry.yarnpkg.com/@arken/node/-/node-1.4.6.tgz#4c94fe80c8f5392058f8649f47a68b2534f88753"
+  integrity sha512-OaKxw6k//seVO+H4+I2cHTd6mZQ/C57i1SzAeZV0X/6e0OQN86+NqIuyB9owscyHme0HMg0rD6xzlSCpwJRLCA==
   dependencies:
     "@truffle/hdwallet-provider" "^2.0.3"
     "@typechain/ethers-v4" "^1.0.0"

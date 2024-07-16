@@ -373,7 +373,7 @@ async function migrateAccounts() {
       // @ts-ignore
       if (oldProfile?.meta?.characters) {
         // @ts-ignore
-        console.log(oldProfile.meta.characters)
+        // console.log(oldProfile.meta.characters)
         // @ts-ignore
         for (const character of oldProfile.meta.characters) {
           // need to hit BSC to figure out the characters token ID so we don't duplicate
