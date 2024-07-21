@@ -32,7 +32,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@arken/node": "^1.4.6",
+    "@arken/node": "../node",
     "dayjs": "^1.11.11",
     "ethers": "^6.13.1",
     "fs-jetpack": "^5.1.0",

@@ -1,10 +1,46 @@
+<div align="center">
+  <br>
+
+  <img src=".erb/img/logo.png" width="60%" />
+
+  <br>
+  <br>
+
+  <h2><strong>Arken Shifter</strong> is a <code>free and open source db migration tool</code></h2>
+
+[![Build Status][github-actions-status]][github-actions-url]
+[![Github Tag][github-tag-image]][github-tag-url]
+[![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.arken.gg)
+
+</div>
+
+<br>
+
+## Introduction
+
+<p>
+  Welcome to Arken Shifter, a database migrator for an open omniverse by the Arken Engineering open initiative. Currently it's taking data from various JSONs, Postgres, etc. and moving them to Mongo. In the future it'll do data syncing.
+</p>
+
 # Arken Shifter
 
-Arken Shifter migrates data between systems. Currently it's taking data from various JSONs, Postgres, etc. and moving them to Mongo. In the future it'll do data syncing.
 
-## Data
 
-You can find the data here: https://github.com/arken-engineering/data
+## Install
+
+Clone the repo and install dependencies:
+
+```bash
+git clone --depth 1 --branch main https://github.com/arken-engineering/shifter.git your-project-name
+cd your-project-name
+rush update
+```
+
+**Having issues installing? See our [debugging guide](https://github.com/arken-engineering/shifter/issues/1)**
+
+## Starting Development
+
+Download the data here: https://github.com/arken-engineering/data
 
 Folder structure:
 
@@ -17,14 +53,15 @@ Folder structure:
 
 1. MongoDB
 2. Node 18
+3. Rush
 
 ## Setup
 
 ```
 nvm install 18
-npm install -g yarn ts-node-dev
-yarn install
-yarn run dev
+npm install -g rush ts-node-dev
+rush update
+rushx dev
 ```
 
 Add this to .env
@@ -40,3 +77,28 @@ MONGO_ENDPOINT="mongodb://user:pass@localhost:27017/arken"
 ```
 docker exec -it mongodb bash
 ```
+
+## Docs
+
+See our [docs and guides here](https://docs.arken.gg/installation)
+
+## Quick Links
+
+- 🌐 [Arken Discord](https://discord.arken.gg)
+- 🌐 [Arken Telegram](https://telegram.arken.gg)
+- 📺 [Arken Realms](https://arken.gg/)
+- 📖 [Return Portal](http://return.gg/portal)
+- 💻 [Return Portal Web](https://github.com/arken-engineering/portal-web)
+- 💻 [Return Portal UI](https://github.com/arken-engineering/portal-ui)
+- 🔗 [Arken Seer](https://github.com/arken-engineering/seer)
+- 🔗 [Arken Cerebro](https://github.com/arken-engineering/cerebro)
+
+## License
+
+[WTFFPL](LICENSE)
+
+[github-actions-status]: https://github.com/arken-engineering/shifter/workflows/Test/badge.svg
+[github-actions-url]: https://github.com/arken-engineering/shifter/actions
+[github-tag-image]: https://img.shields.io/github/tag/arken-engineering/shifter.svg?label=version
+[github-tag-url]: https://github.com/arken-engineering/shifter/releases/latest
+
