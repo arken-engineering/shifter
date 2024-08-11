@@ -13,47 +13,47 @@ import guild1MemberwData from '../../data/guilds/1/memberDetails.json'
 import referrals from '../../data/affiliate/refers.json'
 import trades from '../../data/trades.json'
 import oldTrades from '../../data/trades2.json'
-import areaNameChoices from '@arken/node/src/data/generated/areaNameChoices.json'
-import skills from '@arken/node/src/data/generated/skills.json'
-import skillMods from '@arken/node/src/data/generated/skillMods.json'
-import skillClassifications from '@arken/node/src/data/generated/skillClassifications.json'
-import skillConditions from '@arken/node/src/data/generated/skillConditions.json'
-import skillStatusEffects from '@arken/node/src/data/generated/skillStatusEffects.json'
-import skillTreeNodes from '@arken/node/src/data/generated/skillTreeNodes.json'
-import characterNameChoices from '@arken/node/src/data/generated/characterNameChoices.json'
-import characterTitles from '@arken/node/src/data/generated/characterTitles.json'
-import characterTypes from '@arken/node/src/data/generated/characterTypes.json'
-import characterAttributes from '@arken/node/src/data/generated/characterAttributes.json'
-import itemSets from '@arken/node/src/data/generated/itemSets.json'
-import itemAttributes from '@arken/node/src/data/generated/itemAttributes.json'
-import itemAttributeParams from '@arken/node/src/data/generated/itemAttributeParams.json'
-import itemRecipes from '@arken/node/src/data/generated/itemRecipes.json'
-import itemRarities from '@arken/node/src/data/generated/itemRarities.json'
-import itemMaterials from '@arken/node/src/data/generated/itemMaterials.json'
-import itemSubTypes from '@arken/node/src/data/generated/itemSubTypes.json'
-import itemSpecificTypes from '@arken/node/src/data/generated/itemSpecificTypes.json'
-import itemSlots from '@arken/node/src/data/generated/itemSlots.json'
-import itemTypes from '@arken/node/src/data/generated/itemTypes.json'
-import gameInfo from '@arken/node/src/data/generated/gameInfos.json'
-import characterClasses from '@arken/node/src/data/generated/characterClasses.json'
-import characterFactions from '@arken/node/src/data/generated/characterFactions.json'
-import characterRaces from '@arken/node/src/data/generated/characterRaces.json'
-import lore from '@arken/node/src/data/generated/lores.json'
-import biomes from '@arken/node/src/data/generated/biomes.json'
-import biomeFeatures from '@arken/node/src/data/generated/biomeFeatures.json'
-import acts from '@arken/node/src/data/generated/acts.json'
-// import areaTypes from '@arken/node/src/data/generated/areaTypes.json'
-import areas from '@arken/node/src/data/generated/areas.json'
-import eras from '@arken/node/src/data/generated/eras.json'
-import timeGates from '@arken/node/src/data/generated/timeGates.json'
-import runeItems from '@arken/node/src/data/items'
-import energies from '@arken/node/src/data/generated/energies.json'
-import npcs from '@arken/node/src/data/generated/npcs.json'
-import planets from '@arken/node/src/data/generated/planets.json'
-import solarSystems from '@arken/node/src/data/generated/solarSystems.json'
-import games from '@arken/node/src/data/generated/games.json'
+import areaNameChoices from '@arken/node/data/generated/areaNameChoices.json'
+import skills from '@arken/node/data/generated/skills.json'
+import skillMods from '@arken/node/data/generated/skillMods.json'
+import skillClassifications from '@arken/node/data/generated/skillClassifications.json'
+import skillConditions from '@arken/node/data/generated/skillConditions.json'
+import skillStatusEffects from '@arken/node/data/generated/skillStatusEffects.json'
+import skillTreeNodes from '@arken/node/data/generated/skillTreeNodes.json'
+import characterNameChoices from '@arken/node/data/generated/characterNameChoices.json'
+import characterTitles from '@arken/node/data/generated/characterTitles.json'
+import characterTypes from '@arken/node/data/generated/characterTypes.json'
+import characterAttributes from '@arken/node/data/generated/characterAttributes.json'
+import itemSets from '@arken/node/data/generated/itemSets.json'
+import itemAttributes from '@arken/node/data/generated/itemAttributes.json'
+import itemAttributeParams from '@arken/node/data/generated/itemAttributeParams.json'
+import itemRecipes from '@arken/node/data/generated/itemRecipes.json'
+import itemRarities from '@arken/node/data/generated/itemRarities.json'
+import itemMaterials from '@arken/node/data/generated/itemMaterials.json'
+import itemSubTypes from '@arken/node/data/generated/itemSubTypes.json'
+import itemSpecificTypes from '@arken/node/data/generated/itemSpecificTypes.json'
+import itemSlots from '@arken/node/data/generated/itemSlots.json'
+import itemTypes from '@arken/node/data/generated/itemTypes.json'
+import gameInfo from '@arken/node/data/generated/gameInfos.json'
+import characterClasses from '@arken/node/data/generated/characterClasses.json'
+import characterFactions from '@arken/node/data/generated/characterFactions.json'
+import characterRaces from '@arken/node/data/generated/characterRaces.json'
+import lore from '@arken/node/data/generated/lores.json'
+import biomes from '@arken/node/data/generated/biomes.json'
+import biomeFeatures from '@arken/node/data/generated/biomeFeatures.json'
+import acts from '@arken/node/data/generated/acts.json'
+// import areaTypes from '@arken/node/data/generated/areaTypes.json'
+import areas from '@arken/node/data/generated/areas.json'
+import eras from '@arken/node/data/generated/eras.json'
+import timeGates from '@arken/node/data/generated/timeGates.json'
+import runeItems from '@arken/node/data/items'
+import energies from '@arken/node/data/generated/energies.json'
+import npcs from '@arken/node/data/generated/npcs.json'
+import planets from '@arken/node/data/generated/planets.json'
+import solarSystems from '@arken/node/data/generated/solarSystems.json'
+import games from '@arken/node/data/generated/games.json'
 import achievements from '../../data/achievements.json'
-import * as schemas from '@arken/node/src/schema'
+import * as schemas from '@arken/node/schemas'
 import Mongoose, { ConnectOptions, InferSchemaType } from 'mongoose'
 
 const { log, isDebug } = util
@@ -782,7 +782,7 @@ async function migrateAchievements() {
   //   "type": "Crafting",
   //   "isCompleted": false,
   //   "details": { "Date": "Anytime", "Total": 0 },
-  //   "branches": { "1": { "description": ["Craft 1 Runeword"] }, "2": { "description": "Craft 1 Runeword" } }
+  //   "branches": { "1": { "description": ["Craft 1 Runeform"] }, "2": { "description": "Craft 1 Runeform" } }
   // },
 
   const metaverse = await mongo.Metaverse.findOne({ name: 'Arken' })
@@ -1237,14 +1237,14 @@ async function migrateGames() {
     // "uuid": "recHYXHqb8LY3DGsJ",
     // "id": 1,
     // "name": "Arken: Runic Raids",
-    // "link": "https://arken.gg/game/raid",
+    // "link": "https://arken.gg/game/raids",
     // "primaryColor": "red",
     // "secondaryColor": "white",
     // "logoLink": "https://arken.gg/images/games/rune-raid-logo.png",
-    // "shortDescription": "Rune is an addicting dark fantasy RPG. Play and earn runes (crypto) battling players and AI. Use runes to craft gear (NFTs) to make your character more powerful.",
+    // "shortDescription": "Arken is an addicting dark fantasy RPG. Play and earn runes (crypto) battling players and AI. Use runes to craft gear (NFTs) to make your character more powerful.",
     // "description": "The Future DeFi and Gaming Ecosystem\n\nHybrid gaming ecosystem which utilizes NFT game assets, seamless integration into a conventional game.\n",
     // "storyline": "",
-    // "cmcDescription": "## What Is Rune (RUNE)?\n\n[Rune](https://coinmarketcap.com/currencies/rune/) is an open-ended dark fantasy gaming universe built on [Binance Smart Chain](https://coinmarketcap.com/alexandria/article/what-is-binance-smart-chain), where players can battle, join a guild, collect powerful weapons, and earn [NFTs](https://coinmarketcap.com/alexandria/glossary/non-fungible-token) and cryptocurrency in the form of runes by playing.\n\nRunes are small and rare stones inscribed with magical glyphs needed to craft Runewords (NFTs), weapons, and armor. 33 different Runes are distributed to players over two years. Each Rune has a supply of 100,000 or less, and players can earn Runes by competing against other players, joining guilds, participating in yield farms, and community participation.\n\nThe Rune universe consists of Second Wind, a play-to-earn game, Arken: Runic Raids, the yield farm, Runewords (NFTs), and the Infinite Arena Arena, a player-versus-player game. The team is also developing the Heart of the Oasis, an MMORPG that will be launched in 2022. Currently, Rune is running on BSC, but the team sees the universe as blockchain-agnostic and is building a bridge to [Polygon](https://coinmarketcap.com/currencies/polygon/).\n\n## Who Are the Founders of Rune?\n\nRune’s founders are anonymous. The team chose to stay anonymous to protect itself, its associates, and users from “archaic legislation imposed by governments who won’t understand the emerging DeFi field for years to come.” The team alludes to “Binzy,” which is their fill-in for the person(s) behind Rune, a real software engineer with 20 years of experience and connections in the crypto world.\nIn total, the team consists of 12 people: the lead dev, four unity developers, a React developer, a Solidity developer, two consultant developers, two consultant project managers, one marketing manager, one community manager, four mods and some advisors.\n\n## What Makes Rune Unique?\n\nRune offers an attractive mix of blockchain gaming, NFTs, and elements from decentralized finance. Its universe is split into four different parts.\n\nSecond Wind is a play-to-earn game and was the first game built for the ecosystem. You start as a dragonling that can fly around and eat sprites to evolve into a dragon eventually. One round in the web browser-based game lasts five minutes, and players can earn crypto as a reward.\n\nArken: Runic Raids is the yield farm that attracts liquidity to the ecosystem. You can acquire runes through providing liquidity and raiding farms, i.e., yield farming. The team promises that since the supply of runes is limited, their price should find a bottom. Moreover, each rune has its specific utility, and runes can also be combined to build Runewords. Furthermore, for 2022, an online RPG built around runes is in development.\n\nRunewords (NFTs) are unique weapons and armor. Each Runeword is suitable for a specific hero class (seven different hero classes exist) or style of play. Runewords improve a hero’s capabilities in battle and offer improved farming and merchant abilities. Runewords are shared, collected, and traded in the Arken Market and players will soon be able to lend them to others. Runewords are crafted from runes.\n\nFinally, the Infinite Arena Arena is a player-versus-player, web-based 2D topdown game, where you battle your opponents for prizes. Once you defeat an opponent, they go back to the beginning while you can continue the path that goes on infinitely. The last one standing after one minute of battle claims a reward in the form of crypto or NFTs. Every 15 minutes, you enter a new arena.\n",
+    // "cmcDescription": "## What is Arken Realm Shards (RXS)?\n\n[Arken Realms](https://coinmarketcap.com/currencies/rxs/) is an open-ended dark fantasy gaming universe built on [Binance Smart Chain](https://coinmarketcap.com/alexandria/article/what-is-binance-smart-chain), where players can battle, join a guild, collect powerful weapons, and earn [NFTs](https://coinmarketcap.com/alexandria/glossary/non-fungible-token) and cryptocurrency in the form of runes by playing.\n\nRunes are small and rare stones inscribed with magical glyphs needed to craft Runeforms (NFTs), weapons, and armor. 33 different Runes are distributed to players over two years. Each Rune has a supply of 100,000 or less, and players can earn Runes by competing against other players, joining guilds, participating in yield farms, and community participation.\n\nThe Rune universe consists of Second Wind, a play-to-earn game, Arken: Runic Raids, the yield farm, Runeforms (NFTs), and the Infinite Arena Arena, a player-versus-player game. The team is also developing the Heart of the Oasis, an MMORPG that will be launched in 2022. Currently, Arken is running on BSC, but the team sees the universe as blockchain-agnostic and is building a bridge to [Polygon](https://coinmarketcap.com/currencies/polygon/).\n\n## Who Are the Founders of Rune?\n\nArken's founders are anonymous. The team chose to stay anonymous to protect itself, its associates, and users from “archaic legislation imposed by governments who won’t understand the emerging DeFi field for years to come.” The team alludes to “Binzy,” which is their fill-in for the person(s) behind Rune, a real software engineer with 20 years of experience and connections in the crypto world.\nIn total, the team consists of 12 people: the lead dev, four unity developers, a React developer, a Solidity developer, two consultant developers, two consultant project managers, one marketing manager, one community manager, four mods and some advisors.\n\n## What Makes Rune Unique?\n\nRune offers an attractive mix of blockchain gaming, NFTs, and elements from decentralized finance. Its universe is split into four different parts.\n\nSecond Wind is a play-to-earn game and was the first game built for the ecosystem. You start as a dragonling that can fly around and eat sprites to evolve into a dragon eventually. One round in the web browser-based game lasts five minutes, and players can earn crypto as a reward.\n\nArken: Runic Raids is the yield farm that attracts liquidity to the ecosystem. You can acquire runes through providing liquidity and raiding farms, i.e., yield farming. The team promises that since the supply of runes is limited, their price should find a bottom. Moreover, each rune has its specific utility, and runes can also be combined to build Runeforms. Furthermore, for 2022, an online RPG built around runes is in development.\n\nRuneforms (NFTs) are unique weapons and armor. Each Runeform is suitable for a specific hero class (seven different hero classes exist) or style of play. Runeforms improve a hero’s capabilities in battle and offer improved farming and merchant abilities. Runeforms are shared, collected, and traded in the Arken Market and players will soon be able to lend them to others. Runeforms are crafted from runes.\n\nFinally, the Infinite Arena Arena is a player-versus-player, web-based 2D topdown game, where you battle your opponents for prizes. Once you defeat an opponent, they go back to the beginning while you can continue the path that goes on infinitely. The last one standing after one minute of battle claims a reward in the form of crypto or NFTs. Every 15 minutes, you enter a new arena.\n",
     // "contracts": "- [0x4596e527eba13a27cd02576d023695eab0a6b210](https://www.bscscan.com/address/0x4596e527eba13a27cd02576d023695eab0a6b210)\n- BSC\n- [0x5fE24631136D570D12920C9Fa0FEcaDA84E47673](https://www.bscscan.com/address/0x5fE24631136D570D12920C9Fa0FEcaDA84E47673)\n- BSC\n- [0xB615023dfa06944B06c4caDB308E6009907E8f4d](https://www.bscscan.com/address/0xB615023dfa06944B06c4caDB308E6009907E8f4d)\n- BSC\n- [0xdAE69A43bC73e662095b488dbDDD1D3aBA59c1FF](https://www.bscscan.com/address/0xdAE69A43bC73e662095b488dbDDD1D3aBA59c1FF)\n- BSC\n- [0xe97a1b9f5d4b849f0d78f58adb7dd91e90e0fb40](https://www.bscscan.com/address/0xe97a1b9f5d4b849f0d78f58adb7dd91e90e0fb40)\n- BSC\n- [0xa9776b590bfc2f956711b3419910a5ec1f63153e](https://www.bscscan.com/address/0xa9776b590bfc2f956711b3419910a5ec1f63153e)\n- BSC\n- [0xcfA857d6EC2F59b050D7296FbcA8a91D061451f3](https://www.bscscan.com/address/0xcfA857d6EC2F59b050D7296FbcA8a91D061451f3)\n- BSC\n- [0x6122F8500e7d602629FeA714FEA33BC2B2e0E2ac](https://www.bscscan.com/address/0x6122F8500e7d602629FeA714FEA33BC2B2e0E2ac)\n- BSC\n- [0x3e151ca82b3686f555c381530732df1cfc3c7890](https://www.bscscan.com/address/0x3e151ca82b3686f555c381530732df1cfc3c7890)\n- BSC\n- [0x2a74b7d7d44025bcc344e7da80d542e7b0586330](https://www.bscscan.com/address/0x2a74b7d7d44025bcc344e7da80d542e7b0586330)\n- BSC\n- [0x60e3538610e9f4974a36670842044cb4936e5232](https://www.bscscan.com/address/0x60e3538610e9f4974a36670842044cb4936e5232)\n- BSC\n- [0x2098fef7eeae592038f4f3c4b008515fed0d5886](https://www.bscscan.com/address/0x2098fef7eeae592038f4f3c4b008515fed0d5886)\n- BSC\n\n"
 
     // to:
@@ -1992,7 +1992,7 @@ async function migrateBounties() {
       status: 'Paused', //'Paused. Wait for more items to be generated (October).',
       claimedBy: 'Nobody yet.',
       description:
-        'We need help determining the quality of the AI at generated for our Runeword items. Mythics would be the most unique and high quality. Epics would be high quality and slightly unique or a bit less quality but very unique. Rare would be high quality and not unique at all, or low quality and very unique. Magical would be a mix of low quality or low uniqueness, but with some nice ones spread in there for RNG.\n\nThe operation is easy on a technical level, simply download a ZIP folder of the items and move them to the folder based on your judgment.',
+        'We need help determining the quality of the AI at generated for our Runeform items. Mythics would be the most unique and high quality. Epics would be high quality and slightly unique or a bit less quality but very unique. Rare would be high quality and not unique at all, or low quality and very unique. Magical would be a mix of low quality or low uniqueness, but with some nice ones spread in there for RNG.\n\nThe operation is easy on a technical level, simply download a ZIP folder of the items and move them to the folder based on your judgment.',
     },
   ]
 
