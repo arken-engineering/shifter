@@ -53,7 +53,7 @@ import planets from '@arken/node/data/generated/planets.json'
 import solarSystems from '@arken/node/data/generated/solarSystems.json'
 import games from '@arken/node/data/generated/games.json'
 import achievements from '../../data/achievements.json'
-import * as schemas from '@arken/node/schemas'
+import * as schemas from '@arken/node/schema/mongoose'
 import Mongoose, { ConnectOptions, InferSchemaType } from 'mongoose'
 
 const { log, isDebug } = util
