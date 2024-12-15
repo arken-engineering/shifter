@@ -19,7 +19,7 @@
 ## Introduction
 
 <p>
-  Welcome to Arken Shifter, a database migrator for an open omniverse by the Arken Engineering open initiative. Currently it's taking data from various JSONs, Postgres, etc. and moving them to Mongo. In the future it'll do data syncing.
+  Welcome to Arken Shifter, a database migrator for the Arken Realms omniverse open initiative. Currently it's taking data from various JSONs, Postgres, etc. and moving them to Mongo. In the future it'll do data syncing.
 </p>
 
 # Arken Shifter
@@ -93,7 +93,7 @@ See our [docs and guides here](https://docs.arken.gg/installation)
 
 ## License
 
-[WTFFPL](LICENSE)
+[MIT](LICENSE)
 
 [github-actions-status]: https://github.com/arkenrealms/shifter/workflows/Test/badge.svg
 [github-actions-url]: https://github.com/arkenrealms/shifter/actions

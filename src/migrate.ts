@@ -40,17 +40,20 @@ import itemSubTypes from '@arken/node/data/generated/itemSubTypes.json'
 import itemSpecificTypes from '@arken/node/data/generated/itemSpecificTypes.json'
 import itemSlots from '@arken/node/data/generated/itemSlots.json'
 import itemTypes from '@arken/node/data/generated/itemTypes.json'
+import itemAffixes from '@arken/node/data/generated/itemAffixes.json'
 import gameInfo from '@arken/node/data/generated/gameInfos.json'
 import characters from '@arken/node/data/generated/characters.json'
 import characterClasses from '@arken/node/data/generated/characterClasses.json'
 import characterFactions from '@arken/node/data/generated/characterFactions.json'
 import characterRaces from '@arken/node/data/generated/characterRaces.json'
+import characterGenders from '@arken/node/data/generated/characterGenders.json'
 import lore from '@arken/node/data/generated/lores.json'
 import biomes from '@arken/node/data/generated/biomes.json'
 import biomeFeatures from '@arken/node/data/generated/biomeFeatures.json'
 import acts from '@arken/node/data/generated/acts.json'
 // import areaTypes from '@arken/node/data/generated/areaTypes.json'
 import areas from '@arken/node/data/generated/areas.json'
+import areaTypes from '@arken/node/data/generated/areaTypes.json'
 import eras from '@arken/node/data/generated/eras.json'
 import timeGates from '@arken/node/data/generated/timeGates.json'
 import runeItems from '@arken/node/data/items'
@@ -2181,7 +2184,7 @@ class App {
       this.cache.Area[item.id] = this.cache.Area[item.name] = await this.model.Area.findOne({
         name: item.name,
       })
-      if (this.cache.Area[item.name]) {
+      if (this.cache.Area[item.id]) {
         console.log(`Area with name ${item.name} already exists.`)
         continue
       }
@@ -2196,6 +2199,7 @@ class App {
         status: item.isEnabled ? 'Active' : 'Pending',
       })
 
+      // TODO: relationships
       // "types": [18],
       // "npcs": [],
       // "guilds": [],
@@ -2507,8 +2511,6 @@ class App {
         meta: item,
         status: 'Active',
       })
-
-      await newCharacterTitle.save()
     }
   }
 
@@ -2540,6 +2542,7 @@ class App {
     for (const item of acts) {
       this.oldCache.Act[item.id] = item
       this.cache.Act[item.id] = await this.model.Act.findOne({ name: item.name })
+
       if (this.cache.Act[item.id]) continue
 
       this.cache.Act[item.id] = await this.model.Act.create({
@@ -2549,6 +2552,9 @@ class App {
         key: item.id + '',
         meta: item,
         status: item.isEnabled ? 'Active' : 'Pending',
+        characterIds: item.townNpcs
+          .map((characterId) => this.cache.Character[characterId]?.id)
+          .filter((val) => !!val),
       })
     }
   }
@@ -2770,7 +2776,7 @@ class App {
         name: item.name,
       })
 
-      if (this.cache.CharacterClass[item.name]) {
+      if (this.cache.CharacterClass[item.id]) {
         console.log('CharacterClass ' + item.name + ' already exists')
         continue
       }
@@ -2789,7 +2795,7 @@ class App {
   async migrateCharacterFactions() {
     this.cache.Application.Arken = await this.model.Application.findOne({
       key: 'arken',
-    }).exec()
+    })
 
     for (const item of characterFactions) {
       if (!item.name) continue
@@ -2797,7 +2803,7 @@ class App {
       this.cache.CharacterFaction[item.id] = await this.model.CharacterFaction.findOne({
         name: item.name,
       })
-      if (this.cache.CharacterFaction[item.name]) {
+      if (this.cache.CharacterFaction[item.id]) {
         console.log('CharacterFaction ' + item.name + ' already exists')
         continue
       }
@@ -2813,6 +2819,31 @@ class App {
     }
   }
 
+  async migrateCharacterGenders() {
+    this.cache.Application.Arken = await this.model.Application.findOne({
+      key: 'arken',
+    })
+
+    for (const item of characterGenders) {
+      if (!item.name) continue
+
+      this.cache.CharacterGender[item.id] = await this.model.CharacterGender.findOne({
+        name: item.name,
+      })
+      if (this.cache.CharacterGender[item.id]) {
+        console.log('CharacterGender ' + item.name + ' already exists')
+        continue
+      }
+
+      this.cache.CharacterGender[item.id] = await this.model.CharacterGender.create({
+        applicationId: this.cache.Application.Arken.id,
+        name: item.name,
+        key: item.name,
+        meta: item,
+        status: 'Active',
+      })
+    }
+  }
   // async  migrateCharacterSpawnRules() {
   //   for (const item of characterRaces) {
   //     if (!item.name) continue
@@ -2971,7 +3002,7 @@ class App {
         name: item.name,
       })
 
-      if (this.cache.Energy[item.name]) {
+      if (this.cache.Energy[item.id]) {
         console.log('Energy ' + item.name + ' already exists')
         continue
       }
@@ -2987,47 +3018,21 @@ class App {
     }
   }
 
-  // async migrateNpcs() {
-  //   for (const item of npcs) {
-  //     if (!item.title) continue
+  async migrateAreaTypes() {
+    for (const item of areaTypes) {
+      if (!item.name) continue
 
-  //     this.cache.Npc[item.title] = await this.model.Npc.findOne({ name: item.title })
-  //     if (this.cache.Npc[item.title]) {
-  //       console.log('NPC ' + item.title + ' already exists')
-  //       continue
-  //     }
+      const existingItem = await this.model.AreaType.findOne({ name: item.name })
+      if (existingItem) continue
 
-  //     this.cache.Npc[item.title] = await this.model.Npc.create({
-  //       applicationId: this.cache.Application.Arken.id,
-  //       name: item.title,
-  //       description: item.description,
-  //       key: item.title,
-  //       meta: item,
-  //       status: item.isEnabled ? 'Active' : 'Pending',
-  //     })
-
-  //     this.oldCache.Npc[item.id] = this.cache.Npc[item.title]
-  //   }
-  // }
-
-  // async migrateAreaTypes() {
-  //   for (const item of areaTypes) {
-  //     if (!item.name) continue
-
-  //     const existingItem = await this.model.AreaType.findOne({ name: item.name })
-  //     if (existingItem) continue
-
-  //     const newAreaType = await this.model.AreaType.create({
-  //       name: item.name,
-  //       description: item.description,
-  //       key: item.name,
-  //       meta: item,
-  //       status: item.isEnabled ? 'Active' : 'Pending',
-  //     })
-
-  //     await newAreaType.save()
-  //   }
-  // }
+      const newAreaType = await this.model.AreaType.create({
+        name: item.name,
+        key: item.name,
+        meta: item,
+        status: 'Active',
+      })
+    }
+  }
 
   // async migrateAreaLandmarks() {
   //   for (const item of areaLandmarks) {
@@ -3085,7 +3090,7 @@ class App {
       })
       this.oldCache.BiomeFeature[item.id] = this.cache.BiomeFeature[item.name]
 
-      if (this.cache.BiomeFeature[item.name]) {
+      if (this.cache.BiomeFeature[item.id]) {
         console.log('BiomeFeature ' + item.name + ' already exists')
         continue
       }
@@ -3112,7 +3117,7 @@ class App {
       })
       this.oldCache.ItemSpecificType[item.id] = this.cache.ItemSpecificType[item.name]
 
-      if (this.cache.ItemSpecificType[item.name]) {
+      if (this.cache.ItemSpecificType[item.id]) {
         console.log('Item specificType ' + item.name + ' already exists')
         continue
       }
@@ -3130,6 +3135,51 @@ class App {
     }
   }
 
+  async migrateItemAffixes() {
+    for (const item of itemAffixes) {
+      if (!item.name) continue
+
+      // "uuid": "recsKNa2xQIxHlbFO",
+      // "id": 1,
+      // "name": "Dragon",
+      // "isPrefix": true,
+      // "isSuffix": false,
+      // "isTitle": false,
+      // "description": "Reduces Damage Significantly",
+      // "types": [
+      //   3
+      // ],
+      // "rarities": [
+      //   6,
+      //   5
+      // ]
+      this.cache.ItemAffix[item.name] = await this.model.ItemAffix.findOne({ name: item.name })
+      this.oldCache.ItemAffix[item.id] = this.cache.ItemAffix[item.name]
+
+      if (this.cache.ItemAffix[item.id]) {
+        console.log('Item affix ' + item.name + ' already exists')
+        continue
+      }
+
+      this.cache.ItemAffix[item.name] = await this.model.ItemAffix.create({
+        applicationId: this.cache.Application.Arken.id,
+        name: item.name,
+        description: item.description,
+        key: item.id + '',
+        meta: item,
+        status: 'Active',
+        isPrefix: item.isPrefix,
+        isSuffix: item.isSuffix,
+        isTitle: item.isTitle,
+        weight: 1,
+        typeIds: item.types.map((typeId) => this.cache.ItemType[typeId].id),
+        rarityIds: item.rarities.map((rarityId) => this.cache.ItemRarity[rarityId].id),
+      })
+
+      this.oldCache.ItemAffix[item.id] = this.cache.ItemAffix[item.name]
+    }
+  }
+
   async migrateItemTypes() {
     for (const item of itemTypes) {
       if (!item.name) continue
@@ -3137,7 +3187,7 @@ class App {
       this.cache.ItemType[item.name] = await this.model.ItemType.findOne({ name: item.name })
       this.oldCache.ItemType[item.id] = this.cache.ItemType[item.name]
 
-      if (this.cache.ItemType[item.name]) {
+      if (this.cache.ItemType[item.id]) {
         console.log('Item type ' + item.name + ' already exists')
         continue
       }
@@ -3210,7 +3260,7 @@ class App {
       this.cache.ItemSlot[item.name] = await this.model.ItemSlot.findOne({ name: item.name })
       this.oldCache.ItemSlot[item.id] = this.cache.ItemSlot[item.name]
 
-      if (this.cache.ItemSlot[item.name]) {
+      if (this.cache.ItemSlot[item.id]) {
         console.log('Item slot ' + item.name + ' already exists')
         continue
       }
@@ -3235,7 +3285,7 @@ class App {
       this.cache.ItemSubType[item.name] = await this.model.ItemSubType.findOne({ name: item.name })
       this.oldCache.ItemSubType[item.id] = this.cache.ItemSubType[item.name]
 
-      if (this.cache.ItemSubType[item.name]) {
+      if (this.cache.ItemSubType[item.id]) {
         console.log('Item subtype ' + item.name + ' already exists')
         continue
       }
@@ -3264,7 +3314,7 @@ class App {
           name: item.name,
         })
 
-      if (this.cache.ItemMaterial[item.name]) {
+      if (this.cache.ItemMaterial[item.id]) {
         console.log('Item material ' + item.name + ' already exists')
         continue
       }
@@ -4581,49 +4631,44 @@ class App {
     // await this.getChristmasTicketWhales()
     await this.createOmniverse() //
     await this.migrateStats()
-    // await this.migrateEras()
-    // await this.migrateCharacterAttributes() //
-    // await this.migrateGuides() //
+    await this.migrateEras()
+    await this.migrateGuides() //
 
     // await this.migrateItemTransmuteRules() // fill this in and do later
-    // await this.migrateSkills() //
-    // await this.migrateSkillMods() //
-    // await this.migrateSkillClassifications() //
-    // await this.migrateSkillConditions() //
+    await this.migrateSkills() //
+    await this.migrateSkillMods() //
+    await this.migrateSkillClassifications() //
+    await this.migrateSkillConditions() //
     // // await this.migrateSkillConditionParams() // dont need??
-    // await this.migrateSkillStatusEffects() //
-    // await this.migrateSkillTrees() // fill in and do again later
-    // await this.migrateSkillTreeNodes()
+    await this.migrateSkillStatusEffects() //
+    await this.migrateSkillTrees() // fill in and do again later
+    await this.migrateSkillTreeNodes()
     // // await this.migrateCharacterGuilds()
-    // await this.migrateCharacterRaces()
-    // // await this.migrateCharacterGenders()
-    // await this.migrateCharacterFactions()
-    // await this.migrateCharacterClasses()
-    // // await this.migrateCharacters()
+    await this.migrateCharacterRaces()
+    await this.migrateCharacterGenders()
+    await this.migrateCharacterFactions()
+    await this.migrateCharacterClasses()
     await this.migrateCharacterTypes()
-    // await this.migrateCharacterAttributes()
+    await this.migrateCharacterAttributes()
     // // await this.migrateCharacterStats() // merged into attributes
-    // await this.migrateCharacterTitles()
+    await this.migrateCharacterTitles()
     // // await this.migrateCharacterSpawnRules() // unused
     // // await this.migrateCharacterFightingStyles() // unused
-    // await this.migrateCharacterNameChoices()
+    await this.migrateCharacterNameChoices()
     // // await this.migrateCharacterMovementStasuses() // unused
     // // await this.migrateCharacterPersonalities() // unused
     await this.migrateAreas() //
-    // // await this.migrateAreaTypes() // not sure
-    // await this.migrateAreaNameChoices()
+    await this.migrateAreaTypes()
+    await this.migrateAreaNameChoices()
     await this.migrateEnergies()
-    // await this.migrateLore()
+    await this.migrateLore()
     // // await this.migrateHistoricalRecords() // none
-    // await this.migrateNpcs()
-    // await this.migrateActs()
-    // await this.migrateEras()
     // // await this.migrateAreaLandmark()
     await this.migrateAchievements()
-    // await this.migrateBiomeFeatures()
-    // await this.migrateBiomes() // needs to be rerun
-    // await this.migrateSolarSystems()
-    // await this.migratePlanets()
+    await this.migrateBiomeFeatures()
+    await this.migrateBiomes() // needs to be rerun
+    await this.migrateSolarSystems()
+    await this.migratePlanets()
 
     await this.migrateAssetStandards() //
     await this.migrateAssets() //
@@ -4635,13 +4680,14 @@ class App {
     await this.migrateItemSpecificTypes() //
     await this.migrateItemSubTypes() //
     await this.migrateItemTypes() //
-    // await this.migrateItemAffixes()
+    await this.migrateItemAffixes()
     await this.migrateItemSlots() //
     await this.migrateItemRarities() //
     await this.migrateItemRanks() //
     await this.migrateItemSets() //
 
     await this.migrateCharacters()
+    await this.migrateActs()
     // await this.migrateTeams()
     // // await this.migrateAccounts()
     await this.migrateProfiles()
